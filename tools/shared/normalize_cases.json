@@ -1,0 +1,30 @@
+{
+  "_comment": "Casos compartidos de normalizacion (spec §6 y §10 prueba 9). Python: tools/content_pipeline/pipeline/normalize.py. La prueba Dart equivalente (test/ del proyecto Flutter) debe leer ESTE archivo y comparar normalize(input) == expected. Regla: minusculas, NFD sin marcas combinantes (la ñ pasa a n), todo lo que no sea letra o numero pasa a espacio, espacios colapsados y recortados.",
+  "version": 1,
+  "cases": [
+    {"id": "basico", "input": "Juan", "expected": "juan"},
+    {"id": "mayusculas", "input": "JEHOVÁ es mi PASTOR", "expected": "jehova es mi pastor"},
+    {"id": "tilde_aguda", "input": "Salmo de David. Jehová es mi pastor; nada me faltará.", "expected": "salmo de david jehova es mi pastor nada me faltara"},
+    {"id": "tildes_todas", "input": "áéíóú ÁÉÍÓÚ", "expected": "aeiou aeiou"},
+    {"id": "dieresis", "input": "Pingüino y vergüenza", "expected": "pinguino y verguenza"},
+    {"id": "enie_minuscula", "input": "año", "expected": "ano"},
+    {"id": "enie_mayuscula", "input": "MAÑANA y Año Nuevo", "expected": "manana y ano nuevo"},
+    {"id": "signos_espanol", "input": "¿Cómo te sientes hoy? ¡Bien!", "expected": "como te sientes hoy bien"},
+    {"id": "comillas_latinas", "input": "«Porque de tal manera amó Dios»", "expected": "porque de tal manera amo dios"},
+    {"id": "comillas_tipograficas", "input": "“Hola” ‘mundo’", "expected": "hola mundo"},
+    {"id": "dos_puntos_referencia", "input": "Juan 3:16", "expected": "juan 3 16"},
+    {"id": "rango", "input": "1 Corintios 13:4-7", "expected": "1 corintios 13 4 7"},
+    {"id": "guion_largo", "input": "amor—paz–fe", "expected": "amor paz fe"},
+    {"id": "puntos_suspensivos", "input": "espera… y confía...", "expected": "espera y confia"},
+    {"id": "espacios_multiples", "input": "  JUAN   3 : 16  ", "expected": "juan 3 16"},
+    {"id": "tabs_y_saltos", "input": "uno\tdos\ndos\r\ntres", "expected": "uno dos dos tres"},
+    {"id": "espacio_no_separable", "input": "paz y amor", "expected": "paz y amor"},
+    {"id": "numeros_se_conservan", "input": "1co 13", "expected": "1co 13"},
+    {"id": "apostrofe_y_parentesis", "input": "(dijo) Dios's [amor]", "expected": "dijo dios s amor"},
+    {"id": "vacio", "input": "", "expected": ""},
+    {"id": "solo_signos", "input": "¿¡?!...", "expected": ""},
+    {"id": "combinante_suelto", "input": "á", "expected": "a"},
+    {"id": "precompuesto_vs_descompuesto", "input": "café y café", "expected": "cafe y cafe"},
+    {"id": "mezcla_larga", "input": "Y sabemos que á los que á Dios aman, todas las cosas les ayudan á bien.", "expected": "y sabemos que a los que a dios aman todas las cosas les ayudan a bien"}
+  ]
+}

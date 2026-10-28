@@ -1,0 +1,38 @@
+@font-face{font-family:Lora;font-style:normal;font-weight:400;font-display:swap;src:url({{ base }}/assets/fonts/lora-400.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-style:normal;font-weight:400;font-display:swap;src:url({{ base }}/assets/fonts/atkinson-400.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-style:normal;font-weight:700;font-display:swap;src:url({{ base }}/assets/fonts/atkinson-700.woff2) format("woff2")}
+:root{color-scheme:light dark;--bg:{{ L.bg }};--bg2:{{ L.bg2 }};--text:{{ L.text }};--muted:{{ L.muted }};--accent:{{ L.accent }};--on-accent:{{ L.on_accent }};--line:{{ L.line }}}
+@media (prefers-color-scheme:dark){:root{--bg:{{ D.bg }};--bg2:{{ D.bg2 }};--text:{{ D.text }};--muted:{{ D.muted }};--accent:{{ D.accent }};--on-accent:{{ D.on_accent }};--line:{{ D.line }}}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);background-image:linear-gradient(160deg,var(--bg),var(--bg2));background-attachment:fixed;color:var(--text);font:400 1.125rem/1.6 "Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{width:100%;max-width:40rem;margin:0 auto;padding:1rem}
+header .wrap{padding-top:1.5rem}
+.brand{font-weight:700;font-size:1.125rem;letter-spacing:.02em;color:var(--accent);text-decoration:none}
+main{flex:1}
+.card{margin:1rem 0 1.5rem;padding:2rem 1.5rem;border:1px solid var(--line);border-radius:28px}
+.verse{margin:0;font:400 1.375rem/1.55 Lora,Georgia,"Times New Roman",serif;font-size:clamp(1.375rem,1.1rem + 1.6vw,2rem);text-wrap:balance;overflow-wrap:break-word}
+.ref{margin:1.25rem 0 0;line-height:1.4;font-weight:700;font-size:1rem;color:var(--accent)}
+.src{margin:.25rem 0 0;font-size:.875rem;color:var(--muted)}
+.actions{display:flex;flex-direction:column;gap:.75rem;margin:0 0 1.5rem}
+.btn{display:flex;align-items:center;justify-content:center;min-height:3.5rem;padding:.75rem 1.5rem;border-radius:20px;font:700 1.125rem/1.3 "Atkinson Hyperlegible",system-ui,sans-serif;text-align:center;text-decoration:none}
+.btn-main{background:var(--accent);color:var(--on-accent)}
+.btn-alt{border:2px solid var(--accent);color:var(--accent)}
+a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+h1{font:700 1.75rem/1.25 "Atkinson Hyperlegible",system-ui,sans-serif;margin:1rem 0}
+h2{font:700 1.25rem/1.3 "Atkinson Hyperlegible",system-ui,sans-serif;margin:2rem 0 .5rem}
+p,li{max-width:65ch}
+a{color:var(--accent)}
+.lead{font:400 1.25rem/1.55 Lora,Georgia,serif}
+.legal{font-size:1rem}
+.legal table{border-collapse:collapse;width:100%;font-size:1rem}
+.legal th,.legal td{border:1px solid var(--line);padding:.5rem .625rem;text-align:left;vertical-align:top}
+.draft{border:2px solid var(--accent);border-radius:20px;padding:1rem 1.25rem;margin:1rem 0}
+.pend{font-weight:700;color:var(--accent)}
+footer{font-size:.875rem;color:var(--muted)}
+footer .wrap{padding-bottom:2rem}
+footer a{color:var(--muted)}
+.skip{position:absolute;left:-999px}
+.skip:focus{left:1rem;top:1rem;background:var(--bg);padding:.5rem}
+@media (min-width:36rem){.card{padding:3rem 2.5rem}.actions{flex-direction:row}.actions .btn{flex:1}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}

@@ -1,0 +1,34 @@
+.dart_tool/
+.fvm/flutter_sdk
+build/
+coverage/
+*.iml
+.idea/
+local.properties
+key.properties
+*.jks
+__pycache__/
+tools/content_pipeline/work.db
+
+# Entornos virtuales y cachés de Python
+.venv/
+.pytest_cache/
+*.pyc
+
+# Salidas generadas
+web/dist/
+web/build/
+tools/content_pipeline/work/
+
+# FVM (el SDK vive en la caché del usuario)
+.fvm/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Registros y volcados de fallos
+hs_err_pid*.log
+replay_pid*.log
+android/.kotlin/
+*.log

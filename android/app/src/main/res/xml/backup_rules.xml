@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Respaldo automático (Android 6 a 11): solo user.db y los ajustes.
+     content.db se reinstala con la app (spec §11). user.db vive en
+     app_flutter/ (getApplicationDocumentsDirectory), dominio "root". -->
+<full-backup-content>
+    <include domain="root" path="app_flutter/user.db"/>
+    <include domain="sharedpref" path="."/>
+    <exclude domain="root" path="app_flutter/content.db"/>
+</full-backup-content>

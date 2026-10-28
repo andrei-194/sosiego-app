@@ -1,0 +1,68 @@
+{#
+=====================================================================
+  BORRADOR - NO ES ASESORIA LEGAL
+  Esta politica de privacidad es un borrador tecnico escrito a partir de
+  la seccion 11 del spec. Debe revisarla un abogado (Ley 1581 de 2012,
+  Colombia) antes de publicarse. Los campos marcados [PENDIENTE: ...] son
+  datos que el usuario debe completar: NO se inventaron.
+  `python build.py --strict` falla mientras quede algun [PENDIENTE].
+=====================================================================
+#}
+{% extends "base.html" %}
+{% macro pend(txt) %}<span class="pend">[PENDIENTE: {{ txt }}]</span>{% endmacro %}
+{% block main %}
+<div class="legal">
+<div class="draft" role="note"><strong>Borrador.</strong> Este texto aún no ha sido revisado por un abogado y no constituye asesoría legal. Los campos marcados como pendientes se completarán antes de publicar la app.</div>
+
+<h1>Política de privacidad de Sosiego</h1>
+<p>Última actualización: {{ pend("fecha de vigencia") }}</p>
+
+<h2>En pocas palabras</h2>
+<ul>
+<li>Sosiego no tiene cuentas ni servidor propio. No te pedimos correo, teléfono, ubicación, contactos ni micrófono.</li>
+<li>Tus favoritos, tu historial, tu racha y tus ajustes se quedan en tu teléfono.</li>
+<li>Solo si tú lo aceptas, enviamos métricas anónimas de uso. Si dices que no, no se envía nada.</li>
+<li>Esta página web no usa cookies, ni JavaScript, ni analítica.</li>
+</ul>
+
+<h2>Quién es responsable</h2>
+<p>Responsable del tratamiento: {{ pend("nombre y datos del responsable del tratamiento") }}.<br>
+Correo de contacto para consultas y solicitudes: {{ pend("correo de contacto") }}.</p>
+
+<h2>Qué se guarda y qué sale de tu teléfono</h2>
+<table>
+<thead><tr><th>Dato</th><th>Dónde vive</th><th>¿Sale del teléfono?</th></tr></thead>
+<tbody>
+<tr><td>Favoritos, historial y racha</td><td>Base de datos local de la app</td><td>No, salvo el respaldo automático de Android a tu cuenta de Google, si lo tienes activo</td></tr>
+<tr><td>Ajustes (tamaño de letra, tema, hora del aviso)</td><td>Almacenamiento local de la app</td><td>No, salvo el mismo respaldo</td></tr>
+<tr><td>Lo que escribes en el buscador y la dedicatoria</td><td>Solo la memoria de la app mientras la usas</td><td>No</td></tr>
+<tr><td>Eventos de uso (solo si aceptas)</td><td>PostHog Cloud</td><td>Sí, sin contenido personal</td></tr>
+<tr><td>Identificador anónimo de instalación (solo si aceptas)</td><td>Base de datos local de la app</td><td>Solo si aceptas las métricas</td></tr>
+</tbody>
+</table>
+
+<h2>Métricas anónimas (opcionales)</h2>
+<p>A partir del tercer día de uso, la app te pregunta una sola vez si nos ayudas a mejorar. Puedes cambiar la decisión cuando quieras en Ajustes.</p>
+<ul>
+<li>Sin tu consentimiento no se envía nada: no se inicia la herramienta de métricas ni se crea el identificador anónimo.</li>
+<li>Si aceptas, contamos cuántas veces se usa cada función: abrir la app, elegir cómo te sientes (solo el tema), el tipo de búsqueda (referencia, tema o texto, nunca lo que escribiste), compartir una imagen o un enlace (qué versículo, qué estilo y si lleva dedicatoria, nunca el texto de la dedicatoria), guardar un favorito, activar el aviso diario (solo la franja horaria), abrir el versículo del día desde el aviso, hitos de la racha y uso de la lectura en voz alta.</li>
+<li>Nunca guardamos lo que lees, lo que escribes ni quién eres.</li>
+<li>Proveedor: PostHog Cloud. Región de los servidores: {{ pend("confirmar región y configuración, incluido no almacenar la dirección IP") }}. Es posible que los datos se procesen fuera de Colombia.</li>
+</ul>
+
+<h2>Enlaces para compartir</h2>
+<p>Cuando compartes un versículo, el enlace es el mismo para todas las personas y nunca incluye tu dedicatoria. Al abrir un enlace de esta web, tu navegador se conecta al servicio de alojamiento ({{ pend("confirmar proveedor de alojamiento") }}), que puede registrar datos técnicos de conexión, como la dirección IP, según su propia política. Nosotros no recibimos ni usamos esos registros. El botón «Descargar en Google Play» incluye un parámetro que permite a Google Play informarnos, de forma agregada, cuántas instalaciones llegaron desde un enlace compartido.</p>
+
+<h2>Respaldo de Android</h2>
+<p>Si tienes activo el respaldo de Android, el sistema puede copiar tus favoritos, historial y ajustes a tu cuenta de Google para devolvértelos cuando cambies de teléfono. Esa copia la gestiona Google, no nosotros, y puedes desactivarla en los ajustes de tu teléfono.</p>
+
+<h2>Contenido y público</h2>
+<p>El texto bíblico es la Reina-Valera 1909 (dominio público). Las reflexiones y oraciones se redactan con ayuda de inteligencia artificial y las revisa una persona; no sustituyen la guía pastoral ni la atención médica o psicológica. Sosiego está dirigida a personas adultas y no está pensada para niños.</p>
+
+<h2>Tus derechos</h2>
+<p>De acuerdo con la Ley 1581 de 2012 de protección de datos personales de Colombia, puedes conocer, actualizar, rectificar y suprimir tus datos, y revocar tu autorización. Tus datos locales los controlas tú: se borran al desinstalar la app. Las métricas las puedes apagar en Ajustes. Para cualquier solicitud, escribe a {{ pend("correo de contacto") }}. Para ubicar datos de métricas asociados a tu instalación hará falta el identificador anónimo; {{ pend("definir si la app lo muestra en Ajustes") }}.</p>
+
+<h2>Cambios en esta política</h2>
+<p>Si cambiamos qué datos usamos, actualizaremos esta página y la fecha de arriba antes de publicar la nueva versión de la app.</p>
+</div>
+{% endblock %}

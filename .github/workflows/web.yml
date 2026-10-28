@@ -1,0 +1,91 @@
+name: web
+
+# Web de enlaces /v/ (spec secciones 9 y 12, frente C).
+#
+# - Se construye con web/build.py y se despliega a GitHub Pages COMO ARTEFACTO:
+#   los ~31.000 archivos generados nunca se versionan.
+# - ESTADO ACTUAL: mientras no exista el content.db REAL (pipeline, frente B), el job usa la
+#   MUESTRA de pruebas (web/tests/fixtures/make_fixture.py). Cuando exista, defina la
+#   variable CONTENT_DB (ruta dentro del repo) abajo y el deploy usara ese archivo.
+# - DOMINIO PENDIENTE (spec seccion 13, decision 1): SITE_URL es provisional. Hasta decidir
+#   dominio, en un "project site" de GitHub Pages la web vive bajo /<repo>/, por eso BASE_PATH.
+#   Al fijar el dominio propio: SITE_URL=https://<dominio>, BASE_PATH="" y --strict.
+# - El deploy esta DESACTIVADO por defecto: solo corre en disparo manual con "deploy = true"
+#   (y requiere activar Pages > Source: GitHub Actions en el repositorio). Los push solo
+#   construyen y prueban.
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Desplegar a GitHub Pages"
+        type: boolean
+        default: false
+  push:
+    paths:
+      - "web/**"
+      - "assets/db/content.db"      # ruta actual de la base (muestra); ajustar al content.db real
+      - ".github/workflows/web.yml"
+  pull_request:
+    paths:
+      - "web/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # Ruta del content.db REAL. Vacio = usar la muestra de pruebas.
+  CONTENT_DB: ""
+  SITE_URL: "https://sosiego.app"   # PROVISIONAL (dominio pendiente)
+  BASE_PATH: ""                      # p. ej. /sosiego si se publica como project site
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: web/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Pruebas (HTML, OG, peso, contraste)
+        run: python -m pytest -q
+      - name: Elegir content.db
+        id: db
+        run: |
+          if [ -n "$CONTENT_DB" ] && [ -f "../$CONTENT_DB" ]; then
+            echo "path=../$CONTENT_DB" >> "$GITHUB_OUTPUT"
+            echo "::notice::Usando content.db real: $CONTENT_DB"
+          else
+            python tests/fixtures/make_fixture.py "$RUNNER_TEMP/content.db"
+            echo "path=$RUNNER_TEMP/content.db" >> "$GITHUB_OUTPUT"
+            echo "::warning::Usando la MUESTRA de pruebas: aun no hay content.db real"
+          fi
+      - name: Construir dist/
+        run: python build.py "${{ steps.db.outputs.path }}" --site-url "$SITE_URL" --base-path "$BASE_PATH"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

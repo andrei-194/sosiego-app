@@ -1,0 +1,6 @@
+# Dependencias de la web de enlaces (todas con licencia permisiva).
+Jinja2==3.1.6        # BSD-3
+pytest==9.2.0        # MIT
+fonttools==4.68.0    # MIT
+brotli==1.2.1        # MIT (compresion woff2)
+Pillow==13.0.0       # MIT-CMU (HPND), imagen OG

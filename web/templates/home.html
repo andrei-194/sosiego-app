@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block main %}
+<h1>Una palabra para hoy</h1>
+<p class="lead">Abre la app, toca cómo te sientes, recibe una palabra para hoy y compártela con alguien. Sin cuentas y sin internet.</p>
+<div class="actions">
+<a class="btn btn-main" href="{{ play_url }}" rel="noopener">Descargar en Google Play</a>
+{%- if first_url %}
+<a class="btn btn-alt" href="{{ first_url }}">Leer un versículo</a>
+{%- endif %}
+</div>
+{% endblock %}

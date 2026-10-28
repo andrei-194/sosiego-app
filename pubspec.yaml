@@ -1,0 +1,54 @@
+name: sosiego
+description: Versículos de la Biblia (Reina-Valera 1909) en un feed vertical, sin registro y sin conexión.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.13.0 <4.0.0"
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  go_router: ^18.1.1
+  sqlite3: ^2.4.0
+  sqlite3_flutter_libs: ^0.5.24
+  path: ^1.9.0
+  path_provider: ^2.1.4
+  shared_preferences: ^2.3.2
+  intl: any
+  share_plus: ^13.3.1
+  url_launcher: ^6.3.3
+  flutter_tts: ^4.2.5
+  flutter_local_notifications: ^22.3.3
+  timezone: ^0.11.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/db/content.db
+  fonts:
+    - family: Lora
+      fonts:
+        - asset: assets/fonts/Lora-Variable.ttf
+        - asset: assets/fonts/Lora-Italic-Variable.ttf
+          style: italic
+    - family: AtkinsonHyperlegible
+      fonts:
+        - asset: assets/fonts/AtkinsonHyperlegible-Regular.ttf
+        - asset: assets/fonts/AtkinsonHyperlegible-Italic.ttf
+          style: italic
+        - asset: assets/fonts/AtkinsonHyperlegible-Bold.ttf
+          weight: 700

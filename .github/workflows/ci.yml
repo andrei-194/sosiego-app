@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  content:
+    name: Datos (pipeline y esquema)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pruebas de esquema y FTS5
+        working-directory: tools/content_pipeline
+        run: python -m unittest test_schema -v
+      - name: El content.db de muestra está al día
+        run: |
+          python tools/content_pipeline/make_sample_db.py /tmp/content.db
+          python - <<'EOF'
+          import sqlite3
+          def dump(p):
+              c = sqlite3.connect(p)
+              return sorted(c.execute("select id,text,text_norm,card_score from verses"))
+          assert dump("/tmp/content.db") == dump("assets/db/content.db"), "regenerar assets/db/content.db"
+          EOF
+
+  app:
+    name: Flutter (analyze + test)
+    runs-on: ubuntu-latest
+    needs: content
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter create --platforms=android --org app.sosiego --project-name sosiego .
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: flutter analyze --fatal-infos
+      - run: flutter test --coverage
+      - name: Compilar APK de depuración
+        run: flutter build apk --debug

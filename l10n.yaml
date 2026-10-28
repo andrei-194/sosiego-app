@@ -1,0 +1,6 @@
+# Textos de la app en archivos ARB (spec §7 «Idioma»). Plantilla: español.
+arb-dir: lib/l10n
+template-arb-file: app_es.arb
+output-localization-file: app_localizations.dart
+nullable-getter: false
+format: true

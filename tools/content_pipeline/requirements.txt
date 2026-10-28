@@ -1,0 +1,6 @@
+pytest>=8          # MIT
+jsonschema>=4      # MIT
+numpy>=1.26        # BSD-3 (etapa similar)
+# Solo para la etapa `similar` real (no hace falta para pruebas ni para la muestra):
+#   pip install sentence-transformers      # Apache-2.0; modelo por defecto BAAI/bge-m3 (MIT, ~2.2 GB al primer uso)
+# Ollama es un programa aparte (MIT) y los modelos los instala el usuario (`ollama pull`); el pipeline NUNCA descarga modelos.
