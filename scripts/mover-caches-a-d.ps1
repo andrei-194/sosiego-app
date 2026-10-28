@@ -17,6 +17,7 @@ Las variables de usuario aplican a sesiones nuevas: cierra y vuelve a abrir term
 param(
     [switch]$Ejecutar,
     [switch]$Forzar,
+    [string[]]$Solo = @(),
     [string]$Destino = 'D:\dev\caches'
 )
 
@@ -48,6 +49,7 @@ if ($Ejecutar -and -not $Forzar) {
 
 foreach ($it in $items) {
     $o = $it.Origen; $d = $it.Dest
+    if ($Solo.Count -gt 0 -and $Solo -notcontains $it.Nombre) { continue }
     if (-not (Test-Path $o)) { Escribir "$($it.Nombre): no existe $o, se omite"; continue }
     if ((Get-Item $o -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) {
         Escribir "$($it.Nombre): $o ya es una junction, se omite"; continue
@@ -63,8 +65,11 @@ foreach ($it in $items) {
     $nDest   = (Get-ChildItem $d -Recurse -File -Force -ErrorAction SilentlyContinue | Measure-Object).Count
     if ($nDest -lt $nOrigen) { throw "$($it.Nombre): copia incompleta ($nDest de $nOrigen archivos); el origen sigue intacto" }
 
-    Remove-Item $o -Recurse -Force
+    # Renombrar falla limpio si algo tiene archivos abiertos; borrar podría dejar el origen a medias.
+    $viejo = "$o.migrado"
+    Rename-Item -Path $o -NewName (Split-Path $viejo -Leaf)
     New-Item -ItemType Junction -Path $o -Target $d | Out-Null
+    try { Remove-Item $viejo -Recurse -Force } catch { Escribir "$($it.Nombre): quedó $viejo por archivos en uso; bórralo a mano luego" }
     [Environment]::SetEnvironmentVariable($it.Var, $d, 'User')
     Escribir "$($it.Nombre): listo ($nDest archivos) y $($it.Var) fijada"
 }
