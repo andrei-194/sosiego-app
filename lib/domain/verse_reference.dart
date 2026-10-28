@@ -8,6 +8,76 @@ class BibleBook {
   final String abbr;
 }
 
+/// Capítulos de cada libro (índice 0 = Génesis), para validar referencias.
+const List<int> _builtInChapters = [
+  50,
+  40,
+  27,
+  36,
+  34,
+  24,
+  21,
+  4,
+  31,
+  24,
+  22,
+  25,
+  29,
+  36,
+  10,
+  13,
+  10,
+  42,
+  150,
+  31,
+  12,
+  8,
+  66,
+  52,
+  5,
+  48,
+  12,
+  14,
+  3,
+  9,
+  1,
+  4,
+  7,
+  3,
+  3,
+  3,
+  2,
+  14,
+  4,
+  28,
+  16,
+  24,
+  21,
+  28,
+  16,
+  16,
+  13,
+  6,
+  6,
+  4,
+  4,
+  5,
+  3,
+  6,
+  4,
+  3,
+  1,
+  13,
+  5,
+  5,
+  3,
+  5,
+  1,
+  1,
+  1,
+  22,
+];
+
 const List<BibleBook> bibleBooks = [
   BibleBook(1, 'Génesis', 'Gn'),
   BibleBook(2, 'Éxodo', 'Ex'),
@@ -86,27 +156,76 @@ const Map<String, int> _extraAliases = {
   'hechos de los apostoles': 44,
 };
 
-final Map<String, int> _bookIndex = _buildIndex();
+/// Clave de búsqueda de un nombre de libro: sin tildes, mayúsculas ni puntos,
+/// y sin el espacio tras el número inicial («1 co» y «1co» son lo mismo).
+String bookKey(String s) =>
+    normalizeText(s)
+        .replaceAll('.', '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim()
+        .replaceFirstMapped(RegExp(r'^(\d) '), (m) => m.group(1)!);
 
-Map<String, int> _buildIndex() {
-  final map = <String, int>{};
-  for (final b in bibleBooks) {
-    map[_key(b.name)] = b.id;
-    map[_key(b.abbr)] = b.id;
-  }
-  _extraAliases.forEach((k, v) => map[_key(k)] = v);
-  return map;
+/// Un libro con sus alias para resolver referencias (spec `books.aliases`).
+class BookEntry {
+  const BookEntry({
+    required this.id,
+    required this.name,
+    required this.chapters,
+    this.aliases = const [],
+  });
+  final int id;
+  final String name;
+  final int chapters;
+  final List<String> aliases;
 }
 
-String _key(String s) =>
-    normalizeText(s).replaceAll('.', '').replaceAll(RegExp(r'\s+'), ' ').trim();
+/// Índice nombre o alias -> libro. En la app lo arma `content.db`; el índice
+/// integrado sirve a las pruebas de dominio.
+class BookIndex {
+  BookIndex(Iterable<BookEntry> books) {
+    for (final b in books) {
+      _chapters[b.id] = b.chapters;
+      _byKey[bookKey(b.name)] = b.id;
+      for (final a in b.aliases) {
+        _byKey[bookKey(a)] = b.id;
+      }
+    }
+  }
 
-/// Referencia a un versículo, capítulo o libro. `verse == null` => capítulo.
+  factory BookIndex.builtIn() => BookIndex([
+    for (final b in bibleBooks)
+      BookEntry(
+        id: b.id,
+        name: b.name,
+        chapters: _builtInChapters[b.id - 1],
+        aliases: [
+          b.abbr,
+          for (final e in _extraAliases.entries)
+            if (e.value == b.id) e.key,
+        ],
+      ),
+  ]);
+
+  final _byKey = <String, int>{};
+  final _chapters = <int, int>{};
+
+  int? lookup(String name) => _byKey[bookKey(name)];
+  int? chaptersOf(int bookId) => _chapters[bookId];
+}
+
+final BookIndex _builtIn = BookIndex.builtIn();
+
+/// Referencia a un versículo, un rango o un capítulo. `verse == null` es un
+/// capítulo completo; `verseTo` cierra un rango («4-7»).
 class VerseReference {
-  const VerseReference(this.bookId, this.chapter, [this.verse]);
+  const VerseReference(this.bookId, this.chapter, [this.verse, this.verseTo]);
   final int bookId;
   final int chapter;
   final int? verse;
+  final int? verseTo;
+
+  bool get isChapter => verse == null;
+  bool get isRange => verse != null && verseTo != null && verseTo! > verse!;
 
   /// id compuesto: libro*1.000.000 + capítulo*1.000 + versículo.
   int? get verseId =>
@@ -117,30 +236,41 @@ class VerseReference {
       other is VerseReference &&
       other.bookId == bookId &&
       other.chapter == chapter &&
-      other.verse == verse;
+      other.verse == verse &&
+      other.verseTo == verseTo;
 
   @override
-  int get hashCode => Object.hash(bookId, chapter, verse);
+  int get hashCode => Object.hash(bookId, chapter, verse, verseTo);
 
   @override
-  String toString() => 'VerseReference($bookId, $chapter, $verse)';
+  String toString() => 'VerseReference($bookId, $chapter, $verse, $verseTo)';
 }
 
 final RegExp _refPattern = RegExp(
-  r'^(.+?)\s+(\d{1,3})(?:\s*[:.,]\s*(\d{1,3}))?$',
+  r'^(.+?)\s*(\d{1,3})(?:(?:\s*[:.,]\s*|\s+)(\d{1,3})(?:\s*[-–—]\s*(\d{1,3}))?)?$',
 );
 
-/// Interpreta "Juan 3:16", "1 Cor 13", "sal. 23:1". Devuelve null si no es
-/// una referencia reconocible (la búsqueda cae entonces a texto libre).
-VerseReference? parseReference(String input) {
-  final m = _refPattern.firstMatch(input.trim());
+/// Interpreta «Juan 3:16», «jn 3 16», «1 corintios 13:4-7», «salmo 23». Devuelve
+/// null si no es una referencia reconocible o el capítulo no existe (la
+/// búsqueda cae entonces al tema o al texto libre).
+VerseReference? parseReference(String input, {BookIndex? index}) {
+  final idx = index ?? _builtIn;
+  final m = _refPattern.firstMatch(
+    input.trim().replaceAll(RegExp(r'\s+'), ' '),
+  );
   if (m == null) return null;
-  final book = _bookIndex[_key(m.group(1)!)];
+  final book = idx.lookup(m.group(1)!);
   if (book == null) return null;
   final chapter = int.parse(m.group(2)!);
-  final verseStr = m.group(3);
   if (chapter < 1) return null;
-  final verse = verseStr == null ? null : int.parse(verseStr);
-  if (verse != null && verse < 1) return null;
-  return VerseReference(book, chapter, verse);
+  final max = idx.chaptersOf(book);
+  if (max != null && chapter > max) return null;
+  final verseStr = m.group(3);
+  if (verseStr == null) return VerseReference(book, chapter);
+  final verse = int.parse(verseStr);
+  if (verse < 1) return null;
+  final toStr = m.group(4);
+  final to = toStr == null ? null : int.parse(toStr);
+  if (to != null && to < verse) return null;
+  return VerseReference(book, chapter, verse, to);
 }

@@ -58,6 +58,10 @@ abstract interface class HistoryRepository {
 
   /// Ids de los últimos [limit] versículos vistos (para excluirlos del feed).
   Future<List<int>> recentVerseIds({int limit = 500});
+
+  /// Quita una entrada de «Vistos» (HU-10.2, Quitar). Para deshacer se vuelve
+  /// a registrar con [record] y la fecha original.
+  Future<void> removeEntry(int entryId);
 }
 
 abstract interface class ActivityRepository {
@@ -78,6 +82,9 @@ class AppStateKeys {
   static const installId = 'install_id';
   static const firstRunAt = 'first_run_at';
   static const contentVersionInstalled = 'content_version_installed';
+
+  /// Última sesión en que se mostró la ayuda «Desliza o toca Siguiente».
+  static const feedHintSession = 'feed_hint_session';
 
   /// Marca de que ya se importó lo guardado en shared_preferences.
   static const legacyImported = 'legacy_prefs_imported';

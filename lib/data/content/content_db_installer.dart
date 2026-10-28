@@ -24,9 +24,13 @@ class ContentDbInstaller {
   Future<String> ensureInstalled() async {
     await Directory(targetDir).create(recursive: true);
     final bytes = await loadAsset();
-    final bundled = _versionOfBytes(bytes);
-    final installed = _versionOfFile(targetPath);
-    if (installed == null || isNewer(bundled, installed)) {
+    final bundled = _probeBytes(bytes);
+    final installed = _probeFile(targetPath);
+    // Se reemplaza si no hay copia válida, si el asset trae una
+    // `content_version` mayor o si la copia es de otro esquema (spec §4).
+    if (installed == null ||
+        isNewer(bundled.version, installed.version) ||
+        bundled.schema != installed.schema) {
       await _atomicWrite(bytes);
     }
     return targetPath;
@@ -38,29 +42,34 @@ class ContentDbInstaller {
     await tmp.rename(targetPath);
   }
 
-  String? _versionOfFile(String path) {
+  ({String version, String? schema})? _probeFile(String path) {
     final file = File(path);
     if (!file.existsSync()) return null;
     try {
       final db = sqlite3.open(path, mode: OpenMode.readOnly);
       try {
-        return _readVersion(db);
+        final version = _readMeta(db, 'content_version');
+        return version == null
+            ? null
+            : (version: version, schema: _readMeta(db, 'schema_version'));
       } finally {
         db.dispose();
       }
     } on SqliteException {
-      return null; // base corrupta: se reinstala
+      return null; // base corrupta o de un esquema anterior: se reinstala
     }
   }
 
-  String _versionOfBytes(Uint8List bytes) {
+  ({String version, String? schema}) _probeBytes(Uint8List bytes) {
     final tmp = File(p.join(targetDir, '.probe-$fileName'));
     tmp.writeAsBytesSync(bytes, flush: true);
     try {
       final db = sqlite3.open(tmp.path, mode: OpenMode.readOnly);
       try {
-        return _readVersion(db) ??
+        final version =
+            _readMeta(db, 'content_version') ??
             (throw StateError('content.db sin meta.content_version'));
+        return (version: version, schema: _readMeta(db, 'schema_version'));
       } finally {
         db.dispose();
       }
@@ -69,10 +78,8 @@ class ContentDbInstaller {
     }
   }
 
-  String? _readVersion(Database db) {
-    final rows = db.select(
-      "SELECT value FROM meta WHERE key = 'content_version'",
-    );
+  String? _readMeta(Database db, String key) {
+    final rows = db.select('SELECT value FROM meta WHERE key = ?', [key]);
     return rows.isEmpty ? null : rows.first['value'] as String;
   }
 

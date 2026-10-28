@@ -12,6 +12,7 @@ Future<void> main() async {
       overrides: [
         chosenFontScaleProvider.overrideWith((_) => saved.fontScale),
         themeModeProvider.overrideWith((_) => saved.themeMode),
+        analyticsOptInProvider.overrideWith((_) => saved.analyticsOptIn),
       ],
       child: SosiegoApp(firstRun: !saved.onboardingDone),
     ),

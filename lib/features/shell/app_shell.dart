@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/tokens.dart';
 import '../../core/widgets/warm_backdrop.dart';
 import '../../l10n/l10n.dart';
 
-/// Barra inferior única: cuatro destinos, el feed es "Inicio". Cada pestaña
+/// Barra inferior única: Inicio, Versículos (el feed), Buscar y Guardados. Cada pestaña
 /// conserva su estado (el feed no pierde su posición al volver).
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.shell});
@@ -14,7 +15,7 @@ class AppShell extends StatelessWidget {
 
   static const _destinations = [
     (Icons.home_outlined, Icons.home_rounded),
-    (Icons.explore_outlined, Icons.explore_rounded),
+    (Icons.auto_stories_outlined, Icons.auto_stories),
     (Icons.search_rounded, Icons.search_rounded),
     (Icons.favorite_border, Icons.favorite),
   ];
@@ -23,7 +24,7 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final bar = AppTheme.backdrop(Theme.of(context).brightness).last;
-    // Atrás desde otra pestaña vuelve al feed; solo desde el feed se sale.
+    // Atrás desde otra pestaña vuelve a Inicio; solo desde Inicio se sale.
     return PopScope(
       canPop: shell.currentIndex == 0,
       onPopInvokedWithResult: (didPop, _) {
@@ -35,7 +36,7 @@ class AppShell extends StatelessWidget {
 
   Widget _scaffold(BuildContext context, ColorScheme scheme, Color bar) {
     final l = context.l10n;
-    final labels = [l.navHome, l.navExplore, l.navSearch, l.navSaved];
+    final labels = [l.navHome, l.navVerses, l.navSearch, l.navSaved];
     return Scaffold(
       body: WarmBackdrop(child: shell),
       bottomNavigationBar: NavigationBarTheme(
@@ -48,7 +49,7 @@ class AppShell extends StatelessWidget {
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             final selected = states.contains(WidgetState.selected);
             return TextStyle(
-              fontSize: 13,
+              fontSize: AppFont.iconLabel,
               fontWeight: selected ? FontWeight.bold : FontWeight.normal,
               color: scheme.onSurface.withValues(alpha: selected ? 1 : 0.78),
             );

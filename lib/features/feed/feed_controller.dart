@@ -1,61 +1,92 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/content/content_repository.dart';
 import '../../data/content/providers.dart';
-import '../../domain/feed_selector.dart';
+import '../../data/user/providers.dart';
+import '../../domain/feed_mode.dart';
+import '../../domain/use_cases.dart';
 
-const _batchSize = 10;
-const _historyLimit = 500;
-const _prefsKey = 'recent_verse_ids';
+/// Versículos que la cola mantiene por delante del actual (spec §4.2).
+const feedQueueAhead = 20;
 
-/// Versículos ya mostrados en el feed, en orden. Crece al acercarse al final.
-final feedControllerProvider =
-    AsyncNotifierProvider<FeedController, List<Verse>>(FeedController.new);
+/// Cuando quedan tantos por delante, se rellena con otros [feedQueueAhead].
+const feedRefillAt = 5;
 
-class FeedController extends AsyncNotifier<List<Verse>> {
-  final _selector = FeedSelector();
-  late SharedPreferences _prefs;
-  late List<int> _recent;
-  List<FeedCandidate>? _eligible;
-  bool _loading = false;
+/// Cuántos versículos hacia atrás deja volver «Anterior» (spec §4.5).
+const feedBackLimit = 100;
+
+/// Margen antes de recortar la pila de atrás: se recorta en tandas de 10.
+const feedTrimSlack = 10;
+
+/// Cola de una sesión del feed: lo ya mostrado, el actual y lo que viene.
+class FeedState {
+  const FeedState({required this.items, this.cursor = 0, this.trimmed = 0});
+
+  final List<Verse> items;
+
+  /// Posición del versículo visible (o `items.length`, la tarjeta final).
+  final int cursor;
+
+  /// Cuántos versículos se han recortado del principio de la pila de atrás.
+  final int trimmed;
+
+  Verse? get current =>
+      cursor >= 0 && cursor < items.length ? items[cursor] : null;
+}
+
+/// Un feed por modo (general, tema, momento o parecidos). Se descarta al salir
+/// del modo, así cada entrada empieza una cola nueva.
+final feedControllerProvider = AsyncNotifierProvider.autoDispose
+    .family<FeedController, FeedState, FeedMode>(FeedController.new);
+
+class FeedController
+    extends AutoDisposeFamilyAsyncNotifier<FeedState, FeedMode> {
+  late GetNextVerse _getNext;
+  List<int> _recent = const [];
 
   @override
-  Future<List<Verse>> build() async {
-    _prefs = await SharedPreferences.getInstance();
-    _recent = (_prefs.getStringList(_prefsKey) ?? []).map(int.parse).toList();
-    return _nextBatch(const []);
-  }
-
-  Future<void> loadMore() async {
-    final current = state.valueOrNull;
-    if (current == null || _loading) return;
-    _loading = true;
+  Future<FeedState> build(FeedMode arg) async {
+    _getNext = await ref.watch(getNextVerseProvider.future);
     try {
-      final more = await _nextBatch(current);
-      state = AsyncData([...current, ...more]);
-    } finally {
-      _loading = false;
+      final history = await ref.read(historyRepositoryProvider.future);
+      _recent = await history.recentVerseIds();
+    } catch (_) {
+      _recent = const [];
     }
+    final items = _getNext(
+      FeedRequest(mode: arg, count: 1 + feedQueueAhead, recentIds: _recent),
+    );
+    return FeedState(items: items);
   }
 
-  Future<List<Verse>> _nextBatch(List<Verse> shown) async {
-    final repo = await ref.read(contentRepositoryProvider.future);
-    final eligible = _eligible ??= repo.eligibleCandidates();
-    final ids = _selector.pick(
-      eligible: eligible,
-      recentIds: _recent,
-      lastBooks: shown.map((v) => v.bookId).toList(),
-      count: _batchSize,
-    );
-    _recent.addAll(ids);
-    if (_recent.length > _historyLimit) {
-      _recent.removeRange(0, _recent.length - _historyLimit);
+  /// La persona llegó a la página [index]: rellena la cola y recorta la pila.
+  void moveTo(int index) {
+    final s = state.valueOrNull;
+    if (s == null || index == s.cursor) return;
+    var items = s.items;
+    var cursor = index;
+    var trimmed = s.trimmed;
+
+    final ahead = items.length - 1 - cursor;
+    if (ahead <= feedRefillAt && !arg.isFinite) {
+      final more = _getNext(
+        FeedRequest(
+          mode: arg,
+          count: feedQueueAhead,
+          shownIds: items.map((v) => v.id).toList(),
+          recentIds: _recent,
+        ),
+      );
+      items = [...items, ...more];
     }
-    await _prefs.setStringList(
-      _prefsKey,
-      _recent.map((id) => id.toString()).toList(),
+    if (cursor > feedBackLimit + feedTrimSlack) {
+      final cut = cursor - feedBackLimit;
+      items = items.sublist(cut);
+      cursor -= cut;
+      trimmed += cut;
+    }
+    state = AsyncData(
+      FeedState(items: items, cursor: cursor, trimmed: trimmed),
     );
-    return ids.map(repo.byId).whereType<Verse>().toList();
   }
 }

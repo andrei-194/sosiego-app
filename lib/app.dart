@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'app_router.dart';
+import 'core/licenses.dart';
+import 'data/services/app_bootstrap.dart';
 import 'core/theme/app_theme.dart';
 import 'domain/font_scale.dart';
 import 'features/settings/settings_providers.dart';
@@ -23,6 +25,16 @@ class SosiegoApp extends ConsumerStatefulWidget {
 
 class _SosiegoAppState extends ConsumerState<SosiegoApp> {
   late final GoRouter _router = buildRouter(firstRun: widget.firstRun);
+
+  @override
+  void initState() {
+    super.initState();
+    registerFontLicenses();
+    // Servicios (notificaciones, temporales, aperturas) tras el primer cuadro.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => ref.read(appBootstrapProvider).start(_router),
+    );
+  }
 
   @override
   void dispose() {

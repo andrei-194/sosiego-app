@@ -1,29 +1,28 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/widgets/empty_state.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/widgets/screen_header.dart';
 import '../../core/widgets/soft_card.dart';
 import '../../core/widgets/soft_chip.dart';
+import '../../core/widgets/theme_icons.dart';
 import '../../core/widgets/tokens.dart';
-import '../../core/widgets/verse_tile.dart';
 import '../../data/content/content_repository.dart';
 import '../../data/content/providers.dart';
-import '../../domain/verse_reference.dart';
+import '../../domain/text_normalizer.dart';
+import '../../domain/use_cases.dart';
 import '../../l10n/l10n.dart';
+import '../feed/verse_actions.dart';
+import '../help/help_line_block.dart';
+import '../home/home_screen.dart';
+import '../home/topic_navigation.dart';
 
-/// Resultado de interpretar lo escrito: una referencia (versículo o capítulo)
-/// y/o coincidencias de texto libre (FTS5, sin tildes).
-class _Outcome {
-  const _Outcome({this.chapterRef, this.refVerse, this.matches = const []});
-  final VerseReference? chapterRef;
-  final Verse? refVerse;
-  final List<Verse> matches;
-
-  bool get isEmpty => chapterRef == null && refVerse == null && matches.isEmpty;
-}
-
+/// Buscador único (spec HU-06): un campo, y la entrada se resuelve en orden
+/// referencia, tema o momento y texto. Espera 250 ms tras dejar de escribir.
+/// Lo escrito vive solo en memoria: no hay búsquedas recientes (HU-06.10).
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
@@ -33,89 +32,166 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _controller = TextEditingController();
+  Timer? _debounce;
   String _query = '';
-  _Outcome? _outcome;
+  SearchOutcome? _outcome;
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
-  void _setQuery(String q) {
-    final text = q.trim();
-    final repo = ref.read(contentRepositoryProvider).valueOrNull;
-    _Outcome? outcome;
-    if (text.isNotEmpty && repo != null) {
-      final ref0 = parseReference(text);
-      Verse? verse;
-      VerseReference? chapterRef;
-      if (ref0 != null) {
-        if (ref0.verseId != null) {
-          verse = repo.byId(ref0.verseId!);
-        } else if (repo.chapterVerses(ref0.bookId, ref0.chapter).isNotEmpty) {
-          chapterRef = ref0;
-        }
-      }
-      outcome = _Outcome(
-        chapterRef: chapterRef,
-        refVerse: verse,
-        matches: repo.search(text).where((v) => v.id != verse?.id).toList(),
-      );
+  void _onChanged(String q) {
+    _debounce?.cancel();
+    if (q.trim().isEmpty) {
+      setState(() {
+        _query = '';
+        _outcome = null;
+      });
+      return;
     }
+    _debounce = Timer(AppDuration.searchDebounce, () => _run(q));
+  }
+
+  void _run(String q) {
+    final search = ref.read(searchVersesProvider).valueOrNull;
+    final text = q.trim();
     setState(() {
       _query = text;
-      _outcome = outcome;
+      _outcome = search == null || text.isEmpty ? null : search(text);
     });
   }
 
-  void _fill(String text) {
-    _controller.text = text;
-    _controller.selection = TextSelection.collapsed(offset: text.length);
-    _setQuery(text);
+  void _clear() {
+    _debounce?.cancel();
+    _controller.clear();
+    setState(() {
+      _query = '';
+      _outcome = null;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     // Si la base termina de abrirse con una consulta ya escrita, reintenta.
-    ref.listen(contentRepositoryProvider, (_, _) => _setQuery(_query));
-
+    ref.listen(searchVersesProvider, (_, _) {
+      if (_query.isNotEmpty) _run(_query);
+    });
+    final outcome = _outcome;
+    final words = ContentRepository.queryTokens(_query);
     return SafeArea(
       bottom: false,
-      child: ListView(
+      child: CustomScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.only(bottom: Gap.s32),
-        children: [
-          ScreenHeader(
-            title: context.l10n.searchTitle,
-            subtitle: context.l10n.searchSubtitle,
-            showSettings: true,
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              Gap.s24,
-              Gap.s8,
-              Gap.s24,
-              Gap.s8,
+        slivers: [
+          SliverToBoxAdapter(
+            child: ScreenHeader(
+              title: l.searchTitle,
+              subtitle: l.searchSubtitle,
+              showSettings: true,
             ),
-            child: _SearchField(
-              controller: _controller,
-              onChanged: _setQuery,
-              onClear: () => _fill(''),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Gap.s24,
+                Gap.s8,
+                Gap.s24,
+                Gap.s8,
+              ),
+              child: _SearchField(
+                controller: _controller,
+                onChanged: _onChanged,
+                onClear: _clear,
+              ),
             ),
           ),
           if (_query.isEmpty)
-            _Suggestions(onPick: _fill)
-          else if (_outcome == null)
-            const SizedBox.shrink()
-          else if (_outcome!.isEmpty)
-            _NoResults(query: _query, onPick: _fill)
-          else
-            _Results(outcome: _outcome!),
+            const SliverToBoxAdapter(child: _FeelingChips(showHint: true))
+          else if (outcome == null)
+            const SliverToBoxAdapter(child: SizedBox.shrink())
+          else if (outcome.isEmpty) ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Gap.s24,
+                  Gap.s16,
+                  Gap.s24,
+                  0,
+                ),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    l.searchNoResultsTitle,
+                    key: const Key('search-empty'),
+                    style: AppText.heading(context),
+                  ),
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(child: _FeelingChips()),
+            if (outcome.crisis) const _HelpSliver(),
+          ] else ...[
+            if (outcome.topic != null)
+              SliverToBoxAdapter(child: _TopicButton(match: outcome.topic!)),
+            if (outcome.referenceVerses.isNotEmpty)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(Gap.s24, Gap.s8, Gap.s24, 0),
+                sliver: SliverList.separated(
+                  itemCount: outcome.referenceVerses.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: Gap.s12),
+                  itemBuilder: (_, i) =>
+                      _ReferenceItem(verse: outcome.referenceVerses[i]),
+                ),
+              ),
+            if (outcome.textMatches.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    Gap.s24,
+                    Gap.s16,
+                    Gap.s24,
+                    Gap.s8,
+                  ),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      l.searchResultCount(outcome.textMatches.length),
+                      style: AppText.body(context),
+                    ),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: Gap.s24),
+                sliver: SliverList.separated(
+                  itemCount: outcome.textMatches.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: Gap.s12),
+                  itemBuilder: (_, i) =>
+                      _ResultTile(verse: outcome.textMatches[i], words: words),
+                ),
+              ),
+            ],
+            if (outcome.crisis) const _HelpSliver(),
+          ],
+          const SliverToBoxAdapter(child: SizedBox(height: Gap.s32)),
         ],
       ),
     );
   }
+}
+
+class _HelpSliver extends StatelessWidget {
+  const _HelpSliver();
+
+  @override
+  Widget build(BuildContext context) => const SliverPadding(
+    padding: EdgeInsets.fromLTRB(Gap.s24, Gap.s24, Gap.s24, 0),
+    sliver: SliverToBoxAdapter(child: HelpLineBlock()),
+  );
 }
 
 class _SearchField extends StatelessWidget {
@@ -137,13 +213,13 @@ class _SearchField extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       textInputAction: TextInputAction.search,
-      style: TextStyle(fontSize: 20, color: scheme.onSurface),
+      style: TextStyle(fontSize: AppFont.action + 2, color: scheme.onSurface),
       cursorColor: scheme.primary,
       decoration: InputDecoration(
         hintText: context.l10n.searchHint,
         hintStyle: TextStyle(
-          fontSize: 20,
-          color: scheme.onSurface.withValues(alpha: 0.6),
+          fontSize: AppFont.action,
+          color: scheme.onSurface.withValues(alpha: 0.7),
         ),
         filled: true,
         fillColor: context.softSurface,
@@ -179,148 +255,175 @@ class _SearchField extends StatelessWidget {
   }
 }
 
-class _Suggestions extends StatelessWidget {
-  const _Suggestions({required this.onPick});
-  final ValueChanged<String> onPick;
+/// Sugerencias fijas del campo vacío y de «sin resultados»: los chips de
+/// emoción (HU-06.7 y 06.10).
+class _FeelingChips extends ConsumerWidget {
+  const _FeelingChips({this.showHint = false});
+
+  final bool showHint;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
-    final refs = l.searchSuggestionRefs.split('|');
-    final words = l.searchSuggestionWords.split('|');
-    Widget chips(List<String> items, {IconData? icon}) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Gap.s24),
-      child: Wrap(
-        spacing: Gap.s8,
-        runSpacing: Gap.s8,
-        children: [
-          for (final s in items)
-            SoftChip(label: s, icon: icon, onTap: () => onPick(s)),
-        ],
-      ),
-    );
+    final emotions = ref.watch(emotionsProvider).valueOrNull ?? const [];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionTitle(l.searchWithCitation),
-        chips(refs, icon: Icons.menu_book_outlined),
-        SectionTitle(l.searchWithWord),
-        chips(words),
+        SectionTitle(l.searchFeelingsTitle),
         Padding(
-          padding: const EdgeInsets.fromLTRB(Gap.s24, Gap.s32, Gap.s24, Gap.s8),
-          child: Text(l.searchTip, style: AppText.body(context)),
-        ),
-      ],
-    );
-  }
-}
-
-class _NoResults extends StatelessWidget {
-  const _NoResults({required this.query, required this.onPick});
-  final String query;
-  final ValueChanged<String> onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = context.l10n;
-    return Column(
-      children: [
-        const SizedBox(height: Gap.s32),
-        SizedBox(
-          height: 320,
-          child: EmptyState(
-            icon: Icons.search_off_rounded,
-            title: l.searchNoResultsTitle(query),
-            message: l.searchNoResultsBody,
+          padding: const EdgeInsets.symmetric(horizontal: Gap.s24),
+          child: Wrap(
+            spacing: Gap.s8,
+            runSpacing: Gap.s8,
+            children: [
+              for (final t in emotions)
+                SoftChip(
+                  key: Key('search-emotion-${t.slug}'),
+                  label: t.name,
+                  icon: contentIcon(t.icon),
+                  minHeight: AppSize.minTarget,
+                  onTap: () => openEmotion(context, t.slug),
+                ),
+            ],
           ),
         ),
+        if (showHint)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(Gap.s24, Gap.s24, Gap.s24, 0),
+            child: Text(l.searchTip, style: AppText.body(context)),
+          ),
       ],
     );
   }
 }
 
-class _Results extends StatelessWidget {
-  const _Results({required this.outcome});
-  final _Outcome outcome;
+/// Atajo «Ver versículos sobre ansiedad» (HU-06.4): abre el feed en modo tema.
+class _TopicButton extends StatelessWidget {
+  const _TopicButton({required this.match});
+
+  final TopicMatch match;
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
-    final count = outcome.matches.length;
-    final cr = outcome.chapterRef;
-    String bookName(int id) => bibleBooks.firstWhere((b) => b.id == id).name;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Gap.s24),
+      padding: const EdgeInsets.fromLTRB(Gap.s24, Gap.s8, Gap.s24, Gap.s8),
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          key: const Key('search-topic'),
+          onPressed: () =>
+              openThemeFeed(context, match.slug, isMoment: match.isMoment),
+          icon: const Icon(Icons.auto_stories_outlined),
+          label: Text(context.l10n.searchTopicButton(match.name.toLowerCase())),
+        ),
+      ),
+    );
+  }
+}
+
+/// Un versículo de un capítulo o rango, con las mismas acciones que el feed.
+class _ReferenceItem extends StatelessWidget {
+  const _ReferenceItem({required this.verse});
+
+  final Verse verse;
+
+  @override
+  Widget build(BuildContext context) {
+    return SoftCard(
+      padding: const EdgeInsets.all(Gap.s16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            verse.reference,
+            style: AppText.label(context)
+                .copyWith(color: Theme.of(context).colorScheme.primary),
+          ),
           const SizedBox(height: Gap.s8),
-          if (cr != null) ...[
-            SoftCard(
-              onTap: () => context.push('/capitulo/${cr.bookId}/${cr.chapter}'),
-              color: context.accentWash,
-              semanticLabel: l.searchReadChapterSemantics(
-                bookName(cr.bookId),
-                cr.chapter,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.menu_book_outlined,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: Gap.s16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l.bookChapter(bookName(cr.bookId), cr.chapter),
-                          style: AppText.label(context),
-                        ),
-                        Text(
-                          l.searchReadChapterFull,
-                          style: AppText.body(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded),
-                ],
-              ),
-            ),
-            const SizedBox(height: Gap.s16),
-          ],
-          if (outcome.refVerse != null) ...[
-            VerseTile(
-              text: outcome.refVerse!.text,
-              reference: outcome.refVerse!.reference,
-              onTap: () => context.push('/verso/${outcome.refVerse!.id}'),
-            ),
-            const SizedBox(height: Gap.s16),
-          ],
-          if (count > 0) ...[
-            Semantics(
-              liveRegion: true,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: Gap.s8),
-                child: Text(
-                  l.searchResultCount(count),
-                  style: AppText.body(context),
-                ),
-              ),
-            ),
-            for (final v in outcome.matches) ...[
-              VerseTile(
-                text: v.text,
-                reference: v.reference,
-                onTap: () => context.push('/verso/${v.id}'),
-              ),
-              const SizedBox(height: Gap.s12),
-            ],
-          ],
+          Text(verse.text, style: AppText.verse(context)),
+          const SizedBox(height: Gap.s8),
+          VerseActions(verse: verse),
         ],
       ),
     );
   }
+}
+
+/// Un resultado de texto: referencia en negrita, hasta dos líneas con la
+/// palabra resaltada y, al tocar, el versículo con sus acciones (HU-06.6).
+class _ResultTile extends StatelessWidget {
+  const _ResultTile({required this.verse, required this.words});
+
+  final Verse verse;
+  final List<String> words;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final base = AppText.verse(context, size: AppFont.verse - 2);
+    return SoftCard(
+      onTap: () => context.push('/verso/${verse.id}'),
+      semanticLabel: context.l10n.verseSemantics(verse.text, verse.reference),
+      padding: const EdgeInsets.all(Gap.s16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            verse.reference,
+            style: TextStyle(
+              fontFamily: AppTheme.uiFont,
+              fontSize: AppFont.body,
+              fontWeight: FontWeight.bold,
+              color: scheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: Gap.s4),
+          Text.rich(
+            highlightSpans(
+              verse.text,
+              words,
+              base,
+              base.copyWith(
+                fontWeight: FontWeight.bold,
+                backgroundColor: context.accentWash,
+              ),
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Parte [text] en trozos y resalta las palabras que empiezan con alguna de
+/// [words] (ya normalizadas). La normalización conserva la longitud, así que
+/// los índices del texto normalizado valen para el original.
+TextSpan highlightSpans(
+  String text,
+  List<String> words,
+  TextStyle base,
+  TextStyle highlight,
+) {
+  if (words.isEmpty) return TextSpan(text: text, style: base);
+  final norm = normalizeText(text);
+  final spans = <TextSpan>[];
+  var last = 0;
+  for (final m in RegExp(r'[a-z0-9]+').allMatches(norm)) {
+    final word = m.group(0)!;
+    if (words.any(word.startsWith)) {
+      if (m.start > last) {
+        spans.add(TextSpan(text: text.substring(last, m.start), style: base));
+      }
+      spans.add(
+        TextSpan(text: text.substring(m.start, m.end), style: highlight),
+      );
+      last = m.end;
+    }
+  }
+  if (last < text.length) {
+    spans.add(TextSpan(text: text.substring(last), style: base));
+  }
+  return TextSpan(children: spans, style: base);
 }

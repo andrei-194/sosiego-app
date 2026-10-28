@@ -1,90 +1,152 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../core/widgets/labeled_action.dart';
+import '../../core/widgets/tokens.dart';
 import '../../data/content/content_repository.dart';
-import 'favorites.dart';
 import '../../l10n/l10n.dart';
-import '../../core/theme/tokens.dart';
+import '../listen/listen_button.dart';
+import '../share/share_sheet.dart';
+import 'favorites.dart';
 
-void showToast(BuildContext context, String message, {SnackBarAction? action}) {
+void showToast(
+  BuildContext context,
+  String message, {
+  SnackBarAction? action,
+  Duration duration = AppDuration.toast,
+}) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
         content: Text(message),
-        duration: AppDuration.toast,
+        duration: duration,
         action: action,
+        // Con acción, Flutter lo deja fijo; aquí debe cerrarse solo (HU-10.3).
+        persist: false,
       ),
     );
 }
 
-/// Fila de acciones de un versículo: copiar, favorito y (opcional) "más".
-/// La usan el feed y el detalle del versículo, con la misma apariencia.
-class VerseActions extends ConsumerWidget {
-  const VerseActions({super.key, required this.verse, this.onMore});
+/// El botón Escuchar sobre un fondo de estilo (feed, versículo de hoy): tiñe
+/// sus colores con el del texto del estilo para mantener el contraste.
+class ListenOnStyle extends StatelessWidget {
+  const ListenOnStyle({super.key, required this.verse, required this.color});
 
   final Verse verse;
-  final VoidCallback? onMore;
+  final Color color;
 
-  Future<void> _copy(BuildContext context) async {
-    final l = context.l10n;
-    await Clipboard.setData(
-      ClipboardData(text: l.verseCopyText(verse.text, verse.reference)),
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Theme(
+      data: theme.copyWith(
+        colorScheme: theme.colorScheme.copyWith(primary: color),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: color.withValues(alpha: 0.55)),
+          ),
+        ),
+      ),
+      child: ListenButton(verse: verse),
     );
-    if (context.mounted) showToast(context, l.verseCopied);
   }
+}
 
-  Future<void> _toggleFavorite(BuildContext context, WidgetRef ref) async {
-    final l = context.l10n;
-    final added = await ref.read(favoritesProvider.notifier).toggle(verse.id);
-    if (context.mounted) {
-      showToast(context, added ? l.verseSavedToast : l.verseUnsavedToast);
-    }
+/// Abre el feed con los 10 versículos parecidos a [verseId] (spec HU-05).
+void openSimilar(BuildContext context, int verseId) =>
+    context.go('/versiculos?parecidos=$verseId');
+
+/// Alterna el favorito de [verse] y avisa con un mensaje breve.
+Future<void> toggleFavorite(
+  BuildContext context,
+  WidgetRef ref,
+  Verse verse,
+) async {
+  final l = context.l10n;
+  final added = await ref.read(favoritesProvider.notifier).toggle(verse.id);
+  if (context.mounted) {
+    showToast(context, added ? l.verseSavedToast : l.verseUnsavedToast);
   }
+}
+
+/// Barra de acciones de un versículo (spec HU-04.4, D12): Escuchar (botón con
+/// texto) y Guardar, Compartir y «Más como este» con el texto bajo el icono. La usan el
+/// feed, el versículo y la lista de una referencia.
+class VerseActions extends ConsumerWidget {
+  const VerseActions({
+    super.key,
+    required this.verse,
+    this.color,
+    this.showMore = true,
+  });
+
+  final Verse verse;
+
+  /// Color de iconos y rótulos (en el feed, el del estilo del versículo).
+  final Color? color;
+  final bool showMore;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
+    final fg = color ?? scheme.onSurface;
     final isFavorite = ref.watch(favoritesProvider).contains(verse.id);
-    final muted = scheme.onSurface.withValues(alpha: 0.75);
-    return Row(
+    final reduce = MediaQuery.disableAnimationsOf(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        IconButton(
-          tooltip: context.l10n.verseCopyTooltip,
-          onPressed: () => _copy(context),
-          icon: const Icon(Icons.content_copy_outlined, size: 26),
-          color: muted,
+        // Escuchar es el botón con texto de A-Funciones: es ancho (icono y
+        // texto a un lado), así que va en su fila y no en un cuarto de fila.
+        Align(
+          alignment: Alignment.centerLeft,
+          child: color == null
+              ? ListenButton(verse: verse)
+              : ListenOnStyle(verse: verse, color: fg),
         ),
-        const SizedBox(width: 4),
-        IconButton(
-          tooltip: isFavorite
-              ? context.l10n.verseUnfavoriteTooltip
-              : context.l10n.verseFavoriteTooltip,
-          onPressed: () => _toggleFavorite(context, ref),
-          color: isFavorite ? scheme.primary : muted,
-          icon: AnimatedSwitcher(
-            duration: MediaQuery.disableAnimationsOf(context)
-                ? Duration.zero
-                : AppDuration.quick,
-            transitionBuilder: (child, anim) =>
-                ScaleTransition(scale: anim, child: child),
-            child: Icon(
-              isFavorite ? Icons.favorite : Icons.favorite_border,
-              key: ValueKey(isFavorite),
-              size: 28,
+        const SizedBox(height: Gap.s4),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: LabeledAction(
+                label: isFavorite ? l.actionSaved : l.actionSave,
+                color: fg,
+                selected: isFavorite,
+                onTap: () => toggleFavorite(context, ref, verse),
+                icon: AnimatedSwitcher(
+                  duration: reduce ? Duration.zero : AppDuration.quick,
+                  transitionBuilder: (child, anim) =>
+                      ScaleTransition(scale: anim, child: child),
+                  child: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    key: ValueKey(isFavorite),
+                  ),
+                ),
+              ),
             ),
-          ),
+            Expanded(
+              child: LabeledAction(
+                label: l.actionShare,
+                color: fg,
+                icon: const Icon(Icons.ios_share_rounded),
+                onTap: () => showShareSheet(context, verse: verse),
+              ),
+            ),
+            if (showMore)
+              Expanded(
+                child: LabeledAction(
+                  label: l.moreLikeThis,
+                  color: fg,
+                  icon: const Icon(Icons.auto_stories_outlined),
+                  onTap: () => openSimilar(context, verse.id),
+                ),
+              ),
+          ],
         ),
-        if (onMore != null) ...[
-          const SizedBox(width: 4),
-          IconButton(
-            tooltip: context.l10n.verseMoreTooltip,
-            onPressed: onMore,
-            icon: const Icon(Icons.auto_stories_outlined, size: 26),
-            color: muted,
-          ),
-        ],
       ],
     );
   }

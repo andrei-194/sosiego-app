@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/tokens.dart';
 
 export '../theme/tokens.dart';
 
@@ -36,15 +37,19 @@ class AppText {
     color: Theme.of(c).colorScheme.onSurface,
   );
 
-  static TextStyle verse(BuildContext c, {double size = 20}) => TextStyle(
-    fontFamily: AppTheme.verseFont,
-    fontSize: size,
-    height: 1.55,
-    letterSpacing: 0.1,
-    color: Theme.of(c).colorScheme.onSurface,
-  );
+  static TextStyle verse(BuildContext c, {double size = AppFont.verse}) =>
+      TextStyle(
+        fontFamily: AppTheme.verseFont,
+        fontSize: size,
+        height: 1.55,
+        letterSpacing: 0.1,
+        color: Theme.of(c).colorScheme.onSurface,
+      );
 
-  static TextStyle reference(BuildContext c, {double size = 16}) => TextStyle(
+  static TextStyle reference(
+    BuildContext c, {
+    double size = AppFont.reference,
+  }) => TextStyle(
     fontFamily: AppTheme.verseFont,
     fontStyle: FontStyle.italic,
     fontWeight: FontWeight.w600,
@@ -54,10 +59,10 @@ class AppText {
   );
 
   static TextStyle body(BuildContext c) =>
-      TextStyle(fontSize: 17, height: 1.45, color: c.secondaryText);
+      TextStyle(fontSize: AppFont.body, height: 1.45, color: c.secondaryText);
 
   static TextStyle label(BuildContext c) => TextStyle(
-    fontSize: 17,
+    fontSize: AppFont.body,
     fontWeight: FontWeight.bold,
     color: Theme.of(c).colorScheme.onSurface,
   );

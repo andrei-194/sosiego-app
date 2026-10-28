@@ -11,12 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Archivos exentos, con la razón. Son contenido (lo que irá en content.db),
 /// no interfaz: nombres de temas y momentos, reflexiones de ejemplo.
-const exceptions = <String, String>{
-  'lib/features/explore/mock_data.dart':
-      'Muestra de themes/moments de content.db (name_es, description)',
-  'lib/features/reflection/mock_data.dart':
-      'Muestra de reflections de content.db (contenido, no interfaz)',
-};
+const exceptions = <String, String>{};
 
 /// Carpetas y archivos que se revisan.
 const scanned = [

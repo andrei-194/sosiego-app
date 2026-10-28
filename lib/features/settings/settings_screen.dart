@@ -1,38 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/choice_row.dart';
+import '../../core/widgets/labeled_switch.dart';
 import '../../core/widgets/screen_header.dart';
 import '../../core/widgets/soft_card.dart';
 import '../../core/widgets/tokens.dart';
 import '../../core/widgets/warm_backdrop.dart';
+import '../../data/content/providers.dart';
 import '../../domain/font_scale.dart';
-import '../verse/verse_providers.dart';
-import 'settings_providers.dart';
 import '../../l10n/l10n.dart';
+import '../favorites/share_favorites.dart';
+import '../feed/verse_actions.dart';
+import 'sections/reminder_settings_section.dart';
+import 'sections/voice_settings_section.dart';
+import 'settings_providers.dart';
 
-const appVersion = '0.1.0';
-
-/// Ajustes: tamaño de letra, tema y acerca de. Sin cuentas ni registro.
+/// Ajustes (spec HU-12): tamaño de letra con vista previa, tema, versículo
+/// diario, velocidad de voz, enviarme mis guardados, privacidad, acerca de y
+/// enviar comentarios. Los cambios se aplican al instante.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
+
+  Future<void> _open(BuildContext context, Uri uri) async {
+    final ok = await launchUrl(uri).catchError((_) => false);
+    if (!ok && context.mounted) {
+      showToast(context, context.l10n.settingsLinkError);
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scale = ref.watch(chosenFontScaleProvider);
     final mode = ref.watch(themeModeProvider);
-    final version = ref.watch(contentVersionProvider).valueOrNull;
+    final analytics = ref.watch(analyticsOptInProvider);
+    final repo = ref.watch(contentRepositoryProvider).valueOrNull;
     final scheme = Theme.of(context).colorScheme;
     final l = context.l10n;
-    // Mismo orden que fontChoices (1.0 / 1.3 / 1.6).
-    final fontLabels = [
-      (l.fontNormal, l.fontNormalDesc),
-      (l.fontLarge, l.fontLargeDesc),
-      (l.fontXLarge, l.fontXLargeDesc),
-    ];
-
-    Widget gap() => const SizedBox(height: Gap.s8);
+    final fontLabels = {
+      FontSizeChoice.normal: (l.fontNormal, l.fontNormalDesc),
+      FontSizeChoice.grande: (l.fontLarge, l.fontLargeDesc),
+      FontSizeChoice.muyGrande: (l.fontXLarge, l.fontXLargeDesc),
+    };
+    const gap = SizedBox(height: Gap.s8);
+    const side = EdgeInsets.symmetric(horizontal: Gap.s24);
 
     return SosiegoPage(
       child: ListView(
@@ -41,35 +55,54 @@ class SettingsScreen extends ConsumerWidget {
           ScreenHeader(title: l.settingsTitle, subtitle: l.settingsSubtitle),
           SectionTitle(l.settingsFontSection),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Gap.s24),
+            padding: side,
             child: Column(
               children: [
-                for (final c in fontChoices) ...[
+                // Vista previa: usa el mismo factor que el resto de la app.
+                SoftCard(
+                  key: const Key('font-preview'),
+                  color: context.accentWash,
+                  padding: const EdgeInsets.all(Gap.s16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l.settingsFontPreview, style: AppText.body(context)),
+                      const SizedBox(height: Gap.s8),
+                      Text(
+                        l.settingsFontPreviewVerse,
+                        style: AppText.verse(context),
+                      ),
+                      const SizedBox(height: Gap.s4),
+                      Text(
+                        l.settingsFontPreviewRef,
+                        style: AppText.reference(context),
+                      ),
+                    ],
+                  ),
+                ),
+                gap,
+                for (final c in FontSizeChoice.values) ...[
                   ChoiceRow(
-                    label: fontLabels[fontChoices.indexOf(c)].$1,
-                    description: fontLabels[fontChoices.indexOf(c)].$2,
-                    selected: scale == c,
+                    key: Key('font-${c.key}'),
+                    label: fontLabels[c]!.$1,
+                    description: fontLabels[c]!.$2,
+                    selected: scale == c.factor,
                     leading: Text(
                       l.fontSample,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: AppTheme.verseFont,
-                        fontSize:
-                            20 *
-                            (c == 1.0
-                                ? 0.8
-                                : c == 1.3
-                                ? 1.0
-                                : 1.2),
+                        fontSize: AppFont.action * c.factor,
                         color: scheme.primary,
                       ),
                     ),
                     onTap: () {
-                      ref.read(chosenFontScaleProvider.notifier).state = c;
-                      saveFontScale(c);
+                      ref.read(chosenFontScaleProvider.notifier).state =
+                          c.factor;
+                      saveFontScale(c.factor);
                     },
                   ),
-                  gap(),
+                  gap,
                 ],
                 Padding(
                   padding: const EdgeInsets.only(top: Gap.s4),
@@ -80,19 +113,20 @@ class SettingsScreen extends ConsumerWidget {
           ),
           SectionTitle(l.settingsAppearance),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Gap.s24),
+            padding: side,
             child: Column(
               children: [
                 for (final o in [
+                  (ThemeMode.light, l.themeLight, Icons.light_mode_outlined),
+                  (ThemeMode.dark, l.themeDark, Icons.dark_mode_outlined),
                   (
                     ThemeMode.system,
                     l.themeSystem,
                     Icons.brightness_auto_outlined,
                   ),
-                  (ThemeMode.light, l.themeLight, Icons.light_mode_outlined),
-                  (ThemeMode.dark, l.themeDark, Icons.dark_mode_outlined),
                 ]) ...[
                   ChoiceRow(
+                    key: Key('theme-${o.$1.name}'),
                     label: o.$2,
                     selected: mode == o.$1,
                     leading: Icon(o.$3, color: scheme.primary),
@@ -101,14 +135,66 @@ class SettingsScreen extends ConsumerWidget {
                       saveThemeMode(o.$1);
                     },
                   ),
-                  gap(),
+                  gap,
                 ],
+              ],
+            ),
+          ),
+          // Versículo diario (activar y hora), ayuda con las notificaciones y
+          // velocidad de voz: las aporta el frente de funciones.
+          const ReminderSettingsSection(),
+          const VoiceSettingsSection(),
+          SectionTitle(l.settingsSendSaved),
+          Padding(
+            padding: side,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l.favoritesPhoneNote, style: AppText.body(context)),
+                const SizedBox(height: Gap.s12),
+                OutlinedButton.icon(
+                  key: const Key('settings-send-saved'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(AppSize.minTarget),
+                  ),
+                  onPressed: () => sendMyFavorites(context, ref),
+                  icon: const Icon(Icons.ios_share_rounded),
+                  label: Text(l.favoritesSend),
+                ),
+              ],
+            ),
+          ),
+          SectionTitle(l.settingsPrivacy),
+          Padding(
+            padding: side,
+            child: Column(
+              children: [
+                LabeledSwitchRow(
+                  key: const Key('analytics-switch'),
+                  label: l.settingsAnalytics,
+                  description: l.settingsAnalyticsNote,
+                  value: analytics,
+                  onChanged: (v) {
+                    ref.read(analyticsOptInProvider.notifier).state = v;
+                    saveAnalyticsOptIn(v);
+                  },
+                ),
+                gap,
+                OutlinedButton.icon(
+                  key: const Key('privacy-policy'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(AppSize.minTarget),
+                  ),
+                  onPressed: () => _open(context, Uri.parse(privacyPolicyUrl)),
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  label: Text(l.settingsPrivacyPolicy),
+                ),
               ],
             ),
           ),
           SectionTitle(l.settingsAbout),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Gap.s24),
+            padding: side,
             child: SoftCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,13 +215,58 @@ class SettingsScreen extends ConsumerWidget {
                   Text(l.aboutNoAccountBody, style: AppText.body(context)),
                   const SizedBox(height: Gap.s20),
                   _InfoLine(label: l.aboutAppVersion, value: appVersion),
-                  _InfoLine(label: l.aboutBible, value: l.translationName),
+                  _InfoLine(label: l.aboutBible, value: l.aboutPublicDomain),
                   _InfoLine(
                     label: l.aboutContentVersion,
-                    value: version ?? '…',
+                    value: repo?.contentVersion ?? '…',
                   ),
+                  _InfoLine(
+                    label: l.aboutSource,
+                    value: repo?.meta('source_url') ?? '…',
+                  ),
+                  const SizedBox(height: Gap.s12),
+                  Text(l.aboutAiNote, style: AppText.body(context)),
                 ],
               ),
+            ),
+          ),
+          gap,
+          Padding(
+            padding: side,
+            child: Column(
+              children: [
+                OutlinedButton.icon(
+                  key: const Key('licenses'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(AppSize.minTarget),
+                  ),
+                  onPressed: () => showLicensePage(
+                    context: context,
+                    applicationName: l.appTitle,
+                    applicationVersion: appVersion,
+                  ),
+                  icon: const Icon(Icons.description_outlined),
+                  label: Text(l.settingsLicenses),
+                ),
+                gap,
+                OutlinedButton.icon(
+                  key: const Key('feedback'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(AppSize.minTarget),
+                  ),
+                  onPressed: () => _open(
+                    context,
+                    Uri(
+                      scheme: 'mailto',
+                      path: feedbackEmail,
+                      query:
+                          'subject=${Uri.encodeComponent(l.settingsFeedbackSubject)}',
+                    ),
+                  ),
+                  icon: const Icon(Icons.mail_outline_rounded),
+                  label: Text(l.settingsFeedback),
+                ),
+              ],
             ),
           ),
         ],
@@ -162,11 +293,7 @@ class _InfoLine extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+              style: AppText.label(context),
             ),
           ),
         ],

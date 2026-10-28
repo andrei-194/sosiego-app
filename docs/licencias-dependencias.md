@@ -49,3 +49,7 @@ Fecha: 28 de octubre de 2026. Regla del spec (§3): licencia permisiva (MIT, BSD
 ## Auditoría automática
 
 `scripts/check_manifest.py` falla en CI si el manifiesto principal o el fusionado de release declara un permiso fuera de la lista del spec. El manifiesto de debug lleva INTERNET que añade Flutter para depurar; no se empaqueta en release.
+
+## Zona horaria sin `flutter_timezone`
+
+No se añadió `flutter_timezone`: la app es para Colombia (America/Bogota, UTC-5, sin horario de verano) y la zona se resuelve con `timezone` (ya incluido): Bogotá si el desfase del teléfono coincide y, si no, una zona de la base con el mismo desfase (`resolveDeviceLocation`). Si se quiere la zona exacta del teléfono en cualquier país, `flutter_timezone` (licencia a confirmar en su `LICENSE` antes de añadirlo) la daría por plugin nativo.

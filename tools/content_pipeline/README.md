@@ -164,3 +164,23 @@ inventa ningún número. Verificarlos con una fuente oficial antes de publicar y
   solo produce advertencia (el versículo citado puede traer «tu»).
 - Ollama usa `format` con JSON Schema (salida estructurada), `temperature 0.2` y `seed 42` (+1 por reintento, el valor
   usado queda guardado).
+
+## Resultado de la prueba de calidad (qwen2.5:7b, 50 versículos, 28-oct-2026)
+
+Informe completo: `work/quality_report_qwen2_5_7b.json`; muestra en `work/quality_qwen2_5_7b.db`.
+
+| Criterio | Resultado |
+| --- | --- |
+| (a) JSON válido, etiquetas | 100 % (50/50, a la primera) |
+| (a) JSON válido, reflexiones | 100 % (46/46, con salida estructurada) |
+| (b) reflexiones con cita ajena | 0 |
+| (c) sustituto automático: pasa validadores al primer intento | 23,9 %; tras reintentos 91,3 % |
+| Términos prohibidos en borradores | 3 |
+| Palabras fuera de rango | 1 |
+| Tiempos | etiqueta 14,1 s, reflexión 55,5 s (1,89 intentos de media) |
+| Estimación total | etiquetar todos los versículos ~121,7 h; 685 reflexiones ~10,6 h |
+
+**No determinado:** el criterio (c) real ("80 % se acepta sin reescritura mayor") requiere lectura humana de
+las 46 reflexiones (`review reflections` sobre `work/quality_qwen2_5_7b.db`). El 23,9 % al primer intento es solo un
+sustituto automático estricto; no es una medida de calidad editorial. Etiquetar los 31.084 versículos con este modelo
+en CPU es poco práctico (~122 h): conviene etiquetar solo candidatos pre-filtrados o usar un modelo/GPU más rápido.

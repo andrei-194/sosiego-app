@@ -2,12 +2,134 @@
   "@@locale": "es",
   "appTitle": "Sosiego",
   "navHome": "Inicio",
-  "navExplore": "Explorar",
-  "navSearch": "Buscar",
+    "navSearch": "Buscar",
   "navSaved": "Guardados",
   "actionBack": "Volver",
   "actionSettings": "Ajustes",
   "actionUndo": "Deshacer",
+  "streakSemanticsMore": "Toca para saber más",
+  "navVerses": "Versículos",
+  "actionShare": "Compartir",
+  "actionSave": "Guardar",
+  "actionSaved": "Guardado",
+  "actionRemove": "Quitar",
+  "actionPrevious": "Anterior",
+  "actionNext": "Siguiente",
+  "actionContinue": "Continuar",
+  "switchOn": "Activado",
+  "switchOff": "Desactivado",
+  "feedHint": "Desliza o toca Siguiente",
+  "feedModeTheme": "Tema: {name} · Salir",
+  "@feedModeTheme": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "feedModeSimilar": "Parecidos a {reference} · Salir",
+  "@feedModeSimilar": {
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "feedEndTitle": "Llegaste al final de esta lista",
+  "feedEndBody": "Puedes volver al feed o seguir con versículos parecidos al último.",
+  "feedEndBack": "Volver al feed",
+  "feedEndMoreSimilar": "Ver más parecidos",
+  "homeTodayTitle": "Versículo de hoy",
+  "homeRead": "Leer",
+  "homeFeelingTitle": "¿Cómo te sientes hoy?",
+  "homeMomentsTitle": "Momentos",
+  "homeEmptyTitle": "Preparando tus versículos",
+  "homeEmptyBody": "Un momento, por favor.",
+  "streakCounting": "Llevas {count} días contigo",
+  "@streakCounting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "streakRestart": "Hoy es un buen día para empezar",
+  "streakMilestoneTitle": "{count} días con la Palabra",
+  "@streakMilestoneTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "streakMilestoneBody": "Gracias por volver. Si quieres, comparte este momento con alguien.",
+  "streakMilestoneShare": "Compartir",
+  "streakMilestoneHeadline": "{count} días con la Palabra",
+  "@streakMilestoneHeadline": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "welcomeTitle": "¿Cómo prefieres leer?",
+  "welcomeBody": "Toca una opción y mira cómo se ve. Podrás cambiarla después en Ajustes.",
+  "welcomeSelected": "Elegido",
+  "searchTopicButton": "Ver versículos sobre {topic}",
+  "@searchTopicButton": {
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "searchFeelingsTitle": "Elige cómo te sientes",
+  "searchEmptyHint": "Escribe en el campo o toca un sentimiento.",
+  "searchOpenVerse": "Abrir versículo",
+  "helpBlockText": "Si sientes que no puedes más o piensas en hacerte daño, habla hoy con alguien",
+  "helpCallButton": "Llamar a una línea de ayuda",
+  "favoritesTabSaved": "Guardados",
+  "favoritesTabSeen": "Vistos",
+  "favoritesPhoneNote": "Tus guardados viven solo en este teléfono",
+  "favoritesSend": "Enviarme mis guardados",
+  "favoritesRemovedToast": "Quitado de guardados",
+  "favoritesExportHeader": "Mis guardados de Sosiego",
+  "favoritesExportFooter": "Enviado desde Sosiego",
+  "seenEmptyTitle": "Aún no hay versículos vistos",
+  "seenEmptyBody": "Los versículos que leas unos segundos aparecerán aquí.",
+  "settingsFontPreview": "Así se verá tu lectura",
+  "settingsFontPreviewVerse": "El Señor es mi pastor; nada me faltará.",
+  "settingsFontPreviewRef": "Salmos 23:1",
+  "settingsSendSaved": "Enviarme mis guardados",
+  "settingsPrivacy": "Privacidad",
+  "settingsPrivacyPolicy": "Leer la política de privacidad",
+  "settingsAnalytics": "Ayudar a mejorar la app (anónimo)",
+  "settingsAnalyticsNote": "Solo contaríamos cuántas veces se usa cada función. Nunca guardamos lo que lees ni lo que escribes.",
+  "settingsLinkError": "No pudimos abrir el enlace en este teléfono.",
+  "settingsLicenses": "Licencias y fuentes",
+  "settingsFeedback": "Enviar comentarios",
+  "settingsFeedbackSubject": "Comentarios sobre Sosiego",
+  "aboutSource": "Fuente del texto",
+  "aboutPublicDomain": "Reina-Valera 1909, dominio público",
+  "aboutAiNote": "Las reflexiones y oraciones se redactan con ayuda de inteligencia artificial y las revisa una persona. No sustituyen la guía pastoral ni la atención médica o psicológica.",
+  "companionTitle": "Acompañamiento",
+  "companionContext": "Contexto",
+  "companionReflection": "Reflexión",
+  "companionApplication": "Aplicación",
+  "companionPrayer": "Oración",
+  "companionAiLine": "Redactada con ayuda de inteligencia artificial y revisada por una persona",
+  "companionAnother": "Otra palabra",
+  "companionMoreOfTheme": "Más versículos de este tema",
+  "companionMissingTitle": "Aún no hay una palabra para esto",
+  "companionMissingBody": "Puedes ver versículos de este tema.",
+  "readingMinutes": "{minutes} min",
+  "@readingMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "translationName": "Reina-Valera 1909",
   "verseSemantics": "{text}. {reference}",
   "@verseSemantics": {
@@ -184,7 +306,7 @@
   },
   "favoritesEmptyTitle": "Aquí vivirán tus versículos",
   "favoritesEmptyBody": "Toca el corazón en el que te hable y lo encontrarás aquí, incluso sin conexión.",
-  "favoritesEmptyAction": "Ir a los versículos",
+  "favoritesEmptyAction": "Ir a versículos",
   "settingsTitle": "Ajustes",
   "settingsSubtitle": "Hazlo cómodo para tus ojos.",
   "settingsFontSection": "Tamaño de letra",
@@ -197,7 +319,7 @@
   "fontSample": "Aa",
   "settingsFontNote": "Si tu teléfono ya usa letra grande, Sosiego la respeta (hasta el doble).",
   "settingsAppearance": "Apariencia",
-  "themeSystem": "Como el teléfono",
+  "themeSystem": "Automático",
   "themeLight": "Claro",
   "themeDark": "Oscuro",
   "settingsAbout": "Acerca de",
@@ -241,22 +363,15 @@
   },
   "searchTitle": "Buscar",
   "searchSubtitle": "Escribe una cita o una palabra.",
-  "searchHint": "Salmo 23, Juan 3:16 o «paz»",
+  "searchHint": "Busca una palabra, un tema o Juan 3:16",
   "searchClearTooltip": "Borrar búsqueda",
   "searchWithCitation": "Con una cita",
   "searchWithWord": "O con una palabra",
   "searchSuggestionRefs": "Juan 3:16|Salmo 23|1 Cor 13:4",
   "searchSuggestionWords": "paz|amor|refugio|esperanza|confía",
   "searchTip": "No importan las tildes ni las mayúsculas. Si escribes solo el principio de una palabra, también la encontramos.",
-  "searchNoResultsTitle": "No encontramos «{query}»",
-  "@searchNoResultsTitle": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
-  "searchNoResultsBody": "Prueba con una sola palabra, o con una cita como «Salmo 23». Las tildes no importan.",
+  "searchNoResultsTitle": "No encontramos eso. Prueba con una palabra más corta o elige un tema",
+  "searchNoResultsBody": "Las tildes y las mayúsculas no importan.",
   "searchResultCount": "{count, plural, =1{1 resultado} other{{count} resultados}}",
   "@searchResultCount": {
     "placeholders": {
@@ -304,5 +419,125 @@
   "reflectionGateBody": "Este texto habla de un momento delicado. Léelo cuando te sientas con calma; puedes volver a él cuando quieras.",
   "reflectionGateRead": "Leer ahora",
   "reflectionGateNotNow": "Ahora no",
-  "reflectionPrayerTitle": "Oración"
+  "reflectionPrayerTitle": "Oración",
+  "shareSheetTitle": "Compartir este versículo",
+  "shareClose": "Cerrar",
+  "sharePreviewSemantics": "Vista previa de la tarjeta, estilo {style}. {reference}",
+  "@sharePreviewSemantics": {
+    "placeholders": {
+      "style": {
+        "type": "String"
+      },
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "shareStylesLabel": "Elige un estilo",
+  "shareToLabel": "Para:",
+  "shareToHint": "Por ejemplo, mamá",
+  "shareToHelper": "Es opcional y se queda en tu teléfono.",
+  "shareImageButton": "Compartir imagen",
+  "shareImagePreparing": "Preparando la imagen…",
+  "shareWhatsappButton": "Enviar texto por WhatsApp",
+  "shareImageError": "No pudimos preparar la imagen. Inténtalo de nuevo.",
+  "shareWhatsappError": "No pudimos abrir WhatsApp. Puedes instalarlo, o usar «Compartir imagen» y elegir otra aplicación.",
+  "listenAction": "Escuchar",
+  "listenPause": "Pausar",
+  "listenResume": "Continuar",
+  "listenStop": "Detener",
+  "listenNoVoice": "Tu teléfono no tiene voz en español. Puedes instalarla en Ajustes del teléfono, en Idioma y Salida de texto a voz",
+  "listenFailed": "No pudimos leer el texto en voz alta. Inténtalo de nuevo.",
+  "voiceTitle": "Velocidad de voz",
+  "voiceSlow": "Lenta",
+  "voiceNormal": "Normal",
+  "voiceFast": "Rápida",
+  "voiceTest": "Probar la voz",
+  "voiceSampleText": "Jehová es mi pastor; nada me faltará.",
+  "voiceNote": "Usamos la voz en español de tu teléfono.",
+  "reminderCardTitle": "¿Quieres recibir el versículo cada día?",
+  "reminderCardBody": "Elige una hora y te avisaremos con un versículo, sin molestar.",
+  "reminderClock": "{hour}:{minute} {period}",
+  "@reminderClock": {
+    "placeholders": {
+      "hour": {
+        "type": "int"
+      },
+      "minute": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderAm": "a. m.",
+  "reminderPm": "p. m.",
+  "reminderTimeMorning": "Mañana, {time}",
+  "@reminderTimeMorning": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderTimeAfternoon": "Tarde, {time}",
+  "@reminderTimeAfternoon": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderTimeNight": "Noche, {time}",
+  "@reminderTimeNight": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderNotNow": "Ahora no",
+  "reminderDoneTitle": "Listo, te avisaremos a las {time}",
+  "@reminderDoneTitle": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderDoneBody": "Puedes cambiar la hora o desactivarlo en Ajustes.",
+  "reminderDeniedTitle": "Está bien, sin problema",
+  "reminderDeniedBody": "No activamos los avisos. Cuando quieras, puedes hacerlo desde Ajustes.",
+  "reminderGotIt": "Entendido",
+  "reminderNotificationTitle": "Tu versículo de hoy",
+  "reminderSettingsTitle": "Versículo diario",
+  "reminderSwitchLabel": "Recibir el versículo cada día",
+  "reminderOn": "Activado",
+  "reminderOff": "Desactivado",
+  "reminderTimeSection": "¿A qué hora?",
+  "reminderOtherTime": "Otra hora",
+  "reminderOtherTimeChosen": "Otra hora: {time}",
+  "@reminderOtherTimeChosen": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderPickerHelp": "Elige la hora del aviso",
+  "reminderPermissionDenied": "El teléfono no nos dejó enviar avisos. Puedes permitirlos en Ajustes del teléfono, en Aplicaciones, Sosiego, Notificaciones.",
+  "reminderSystemOff": "Las notificaciones están apagadas en tu teléfono, así que el aviso no llegará. Puedes encenderlas en Ajustes del teléfono, en Aplicaciones, Sosiego, Notificaciones.",
+  "reminderHelpTitle": "Ayuda con las notificaciones",
+  "reminderHelpSubtitle": "Si el aviso no llega a su hora",
+  "reminderHelpIntro": "Algunos teléfonos ahorran batería cerrando las aplicaciones. Para que el aviso llegue:",
+  "reminderHelpStep1": "Abre Ajustes del teléfono y entra en Aplicaciones.",
+  "reminderHelpStep2": "Busca Sosiego y toca Batería.",
+  "reminderHelpStep3": "Elige Sin restricciones. En algunos teléfonos dice No optimizar o Permitir actividad en segundo plano.",
+  "reminderHelpBrandsTitle": "Según la marca de tu teléfono",
+  "reminderHelpSamsung": "Samsung: Ajustes, Cuidado del dispositivo, Batería, Límites de uso en segundo plano. Quita Sosiego de Apps en suspensión.",
+  "reminderHelpXiaomi": "Xiaomi, Redmi y Poco: Ajustes, Aplicaciones, Permisos, Inicio automático. Activa Sosiego. Luego, en Ahorro de batería, elige Sin restricciones.",
+  "reminderHelpOthers": "Motorola, Huawei, Honor, Oppo y Realme: en Batería, busca Inicio automático o Actividad en segundo plano y permítelo para Sosiego.",
+  "reminderHelpLimit": "Si no abres la aplicación en 30 días, los avisos terminan. Al abrirla, vuelven solos.",
+  "reminderHelpClose": "Cerrar"
 }

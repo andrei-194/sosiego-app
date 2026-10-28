@@ -75,6 +75,10 @@ class SqliteHistoryRepository implements HistoryRepository {
   @override
   Future<List<int>> recentVerseIds({int limit = 500}) async =>
       (await recent(limit: limit)).map((e) => e.verseId).toList();
+
+  @override
+  Future<void> removeEntry(int entryId) async =>
+      _db.execute('DELETE FROM history WHERE id = ?', [entryId]);
 }
 
 class SqliteActivityRepository implements ActivityRepository {

@@ -57,6 +57,10 @@ class MemoryHistoryRepository implements HistoryRepository {
   @override
   Future<List<int>> recentVerseIds({int limit = 500}) async =>
       (await recent(limit: limit)).map((e) => e.verseId).toList();
+
+  @override
+  Future<void> removeEntry(int entryId) async =>
+      _items.removeWhere((e) => e.id == entryId);
 }
 
 class MemoryActivityRepository implements ActivityRepository {

@@ -1,22 +1,33 @@
+import 'package:flutter/widgets.dart' show ValueKey;
 import 'package:go_router/go_router.dart';
 
 import 'core/navigation/transitions.dart';
-import 'features/chapter/chapter_screen.dart';
+import 'domain/feed_mode.dart';
 import 'features/daily/daily_screen.dart';
-import 'features/explore/explore_screen.dart';
-import 'features/explore/topic_screen.dart';
 import 'features/favorites/favorites_screen.dart';
 import 'features/feed/feed_screen.dart';
+import 'features/home/home_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
-import 'features/reflection/reflection_screen.dart';
+import 'features/reflection/companion_screen.dart';
 import 'features/search/search_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/shell/app_shell.dart';
 import 'features/verse/verse_detail_screen.dart';
 
-/// Mapa de navegación. Cuatro pestañas (feed, explorar, buscar, guardados)
-/// dentro de la barra inferior; el resto son pantallas a las que se llega con
-/// `push` y se vuelve con "Volver".
+/// Modo del feed según la dirección: `?tema=`, `?momento=` o `?parecidos=`.
+FeedMode feedModeFromUri(Uri uri) {
+  final q = uri.queryParameters;
+  if (q['tema'] != null) return FeedMode.theme(q['tema']!);
+  if (q['momento'] != null) return FeedMode.moment(q['momento']!);
+  final similar = int.tryParse(q['parecidos'] ?? '');
+  if (similar != null) return FeedMode.similar(similar);
+  return FeedMode.general;
+}
+
+/// Mapa de navegación (spec D10). Cuatro pestañas dentro de la barra inferior:
+/// Inicio, Versículos (el feed), Buscar y Guardados. Ajustes se abre desde el
+/// icono de la esquina; el resto son pantallas a las que se llega con `push` y
+/// se vuelve con «Volver».
 GoRouter buildRouter({bool firstRun = false}) => GoRouter(
   initialLocation: firstRun ? '/bienvenida' : '/',
   routes: [
@@ -24,13 +35,16 @@ GoRouter buildRouter({bool firstRun = false}) => GoRouter(
       builder: (_, _, shell) => AppShell(shell: shell),
       branches: [
         StatefulShellBranch(
-          routes: [GoRoute(path: '/', builder: (_, _) => const FeedScreen())],
+          routes: [GoRoute(path: '/', builder: (_, _) => const HomeScreen())],
         ),
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/explorar',
-              builder: (_, _) => const ExploreScreen(),
+              path: '/versiculos',
+              builder: (_, s) {
+                final mode = feedModeFromUri(s.uri);
+                return FeedScreen(key: ValueKey(mode), mode: mode);
+              },
             ),
           ],
         ),
@@ -69,30 +83,12 @@ GoRouter buildRouter({bool firstRun = false}) => GoRouter(
       ),
     ),
     GoRoute(
-      path: '/reflexion/:id',
+      path: '/acompanamiento/:kind/:slug',
       pageBuilder: (_, s) => softPage(
         s,
-        ReflectionScreen(verseId: int.tryParse(s.pathParameters['id']!) ?? 0),
-      ),
-    ),
-    GoRoute(
-      path: '/capitulo/:book/:chapter',
-      pageBuilder: (_, s) => softPage(
-        s,
-        ChapterScreen(
-          bookId: int.tryParse(s.pathParameters['book']!) ?? 0,
-          chapter: int.tryParse(s.pathParameters['chapter']!) ?? 0,
-          highlightVerse: int.tryParse(s.uri.queryParameters['verso'] ?? ''),
-        ),
-      ),
-    ),
-    GoRoute(
-      path: '/tema/:kind/:id',
-      pageBuilder: (_, s) => softPage(
-        s,
-        TopicScreen(
+        CompanionScreen(
           isMoment: s.pathParameters['kind'] == 'momento',
-          id: s.pathParameters['id']!,
+          slug: s.pathParameters['slug']!,
         ),
       ),
     ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'tokens.dart';
 
-/// Chip en píldora de 48 dp mínimo, con emoji o icono opcional.
+/// Chip en píldora de 48 dp mínimo (56 dp en Inicio), con emoji o icono opcional.
 class SoftChip extends StatelessWidget {
   const SoftChip({
     super.key,
@@ -10,6 +10,7 @@ class SoftChip extends StatelessWidget {
     this.emoji,
     this.icon,
     this.selected = false,
+    this.minHeight = AppSize.minChip,
     required this.onTap,
   });
 
@@ -17,6 +18,9 @@ class SoftChip extends StatelessWidget {
   final String? emoji;
   final IconData? icon;
   final bool selected;
+
+  /// Alto mínimo: 48 dp por defecto y 56 dp en los chips de Inicio (HU-02.2).
+  final double minHeight;
   final VoidCallback onTap;
 
   @override
@@ -35,24 +39,31 @@ class SoftChip extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: AppSize.minChip),
+            constraints: BoxConstraints(minHeight: minHeight),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: Gap.s16),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (emoji != null) ...[
-                    Text(emoji!, style: const TextStyle(fontSize: 20)),
+                    Text(
+                      emoji!,
+                      style: const TextStyle(fontSize: AppFont.action),
+                    ),
                     const SizedBox(width: Gap.s8),
                   ] else if (icon != null) ...[
-                    Icon(icon, size: 20, color: scheme.primary),
+                    Icon(
+                      icon,
+                      size: 22,
+                      color: selected ? scheme.onPrimary : scheme.primary,
+                    ),
                     const SizedBox(width: Gap.s8),
                   ],
                   Flexible(
                     child: Text(
                       label,
                       style: TextStyle(
-                        fontSize: 17,
+                        fontSize: AppFont.action,
                         color: selected ? scheme.onPrimary : scheme.onSurface,
                       ),
                     ),

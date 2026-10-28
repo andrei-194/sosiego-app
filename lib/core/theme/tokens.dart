@@ -36,6 +36,15 @@ class AppDuration {
   /// Aviso flotante (toast) visible.
   static const Duration toast = Duration(seconds: 3);
 
+  /// Aviso con «Deshacer» (spec HU-10.3).
+  static const Duration undo = Duration(seconds: 5);
+
+  /// Espera tras dejar de escribir antes de buscar (spec HU-06.8).
+  static const Duration searchDebounce = Duration(milliseconds: 250);
+
+  /// Tiempo visible para contar un versículo como visto (spec §4.6).
+  static const Duration seen = Duration(seconds: 2);
+
   /// Latido de la pantalla de carga.
   static const Duration pulse = Duration(milliseconds: 1600);
 
@@ -54,3 +63,31 @@ class AppSize {
   /// Ancho máximo de una columna de lectura.
   static const double readingWidth = 600;
 }
+
+/// Tamaños de letra base en sp, de la tabla del spec §8 (se multiplican por el
+/// factor elegido; el mínimo de la interfaz es [secondary]).
+class AppFont {
+  /// Versículo (Lora, regular).
+  static const double verse = 22;
+
+  /// Reflexión y oración (Atkinson Hyperlegible, regular).
+  static const double reading = 18;
+
+  /// Botones y chips (Atkinson Hyperlegible, seminegrita).
+  static const double action = 18;
+
+  /// Referencia, por ejemplo Juan 3:16 (negrita).
+  static const double reference = 16;
+
+  /// Texto secundario.
+  static const double secondary = 14;
+
+  /// Texto de apoyo de la interfaz (descripciones, avisos).
+  static const double body = 17;
+
+  /// Rótulo bajo un icono: acotado a 1.3 de escala para que quepan cuatro.
+  static const double iconLabel = 14;
+}
+
+/// Tope del factor de letra de los rótulos bajo un icono (barra de acciones).
+const double iconLabelMaxScale = 1.3;
