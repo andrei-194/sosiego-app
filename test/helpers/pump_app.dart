@@ -33,6 +33,7 @@ Future<void> pumpApp(
   WidgetTester tester, {
   double scale = 1.0,
   bool firstRun = false,
+  bool dark = false,
   Map<String, Object> prefs = const {},
   MemoryFavoritesRepository? favorites,
 }) async {
@@ -42,6 +43,10 @@ Future<void> pumpApp(
   addTearDown(tester.view.reset);
   tester.platformDispatcher.textScaleFactorTestValue = scale;
   addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+  if (dark) {
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+  }
   final repo = ContentRepository('assets/db/content.db');
   addTearDown(repo.close);
   await tester.pumpWidget(
