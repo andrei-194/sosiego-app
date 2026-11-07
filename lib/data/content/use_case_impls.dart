@@ -71,8 +71,7 @@ class SearchVersesImpl implements SearchVerses {
   final ContentSource _source;
   final int limit;
 
-  static String _norm(String s) =>
-      normalizeText(s).replaceAll(RegExp(r'[^a-z0-9]+'), ' ').trim();
+  static String _norm(String s) => normalizeSearchText(s);
 
   @override
   SearchOutcome call(String query) {

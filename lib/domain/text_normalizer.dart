@@ -13,3 +13,10 @@ String normalizeText(String input) {
   }
   return buffer.toString();
 }
+
+/// Normalización completa de búsqueda: [normalizeText] y luego todo lo que no
+/// es letra o número pasa a un espacio (los signos no cuentan). Es la forma de
+/// `verses.text_norm` y de `tools/shared/normalize_cases.json`; la usan la
+/// búsqueda y la resolución de temas para que ambas coincidan con el pipeline.
+String normalizeSearchText(String input) =>
+    normalizeText(input).replaceAll(RegExp(r'[^a-z0-9]+'), ' ').trim();

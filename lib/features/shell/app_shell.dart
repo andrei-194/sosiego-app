@@ -63,18 +63,24 @@ class AppShell extends StatelessWidget {
             ),
           ),
         ),
-        child: NavigationBar(
-          selectedIndex: shell.currentIndex,
-          onDestinationSelected: (i) =>
-              shell.goBranch(i, initialLocation: i == shell.currentIndex),
-          destinations: [
-            for (final (i, d) in _destinations.indexed)
-              NavigationDestination(
-                icon: Icon(d.$1),
-                selectedIcon: Icon(d.$2),
-                label: labels[i],
-              ),
-          ],
+        // Cuatro rótulos en una fila de ~90 dp cada uno: la etiqueta de
+        // NavigationDestination es solo texto y no puede encogerse, así que se
+        // acota a 1.1 para que «Guardados» no se parta a mitad de palabra.
+        child: MediaQuery.withClampedTextScaling(
+          maxScaleFactor: navLabelMaxScale,
+          child: NavigationBar(
+            selectedIndex: shell.currentIndex,
+            onDestinationSelected: (i) =>
+                shell.goBranch(i, initialLocation: i == shell.currentIndex),
+            destinations: [
+              for (final (i, d) in _destinations.indexed)
+                NavigationDestination(
+                  icon: Icon(d.$1),
+                  selectedIcon: Icon(d.$2),
+                  label: labels[i],
+                ),
+            ],
+          ),
         ),
       ),
     );

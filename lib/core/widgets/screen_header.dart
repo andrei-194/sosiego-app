@@ -50,7 +50,12 @@ class ScreenHeader extends StatelessWidget {
               padding: const EdgeInsets.only(right: Gap.s16),
               child: Semantics(
                 header: true,
-                child: Text(title, style: AppText.title(context)),
+                // 32 sp × 2.0 no cabe en una palabra larga («Guardados»): el
+                // título se acota a 1.5 y sigue siendo el texto más grande.
+                child: MediaQuery.withClampedTextScaling(
+                  maxScaleFactor: titleMaxScale,
+                  child: Text(title, style: AppText.title(context)),
+                ),
               ),
             ),
           if (subtitle != null) ...[

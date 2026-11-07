@@ -91,3 +91,10 @@ class AppFont {
 
 /// Tope del factor de letra de los rótulos bajo un icono (barra de acciones).
 const double iconLabelMaxScale = 1.3;
+
+/// Tope del factor de letra de la barra inferior (cuatro rótulos de ~90 dp).
+const double navLabelMaxScale = 1.1;
+
+/// Tope del factor de letra de los títulos de pantalla (32 sp base): con 2.0
+/// una palabra larga no cabe en el ancho y se partiría a mitad de palabra.
+const double titleMaxScale = 1.5;

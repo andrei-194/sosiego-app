@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/screen_header.dart';
 import '../../core/widgets/soft_card.dart';
@@ -78,6 +79,13 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
     );
   }
 
+  /// Rótulo de una pestaña: una línea que se encoge si no cabe, para no partir
+  /// la palabra con letra muy grande.
+  Widget _segmentLabel(String text) => FittedBox(
+    fit: BoxFit.scaleDown,
+    child: Text(text, maxLines: 1, softWrap: false),
+  );
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -109,11 +117,21 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                 style: SegmentedButton.styleFrom(
                   minimumSize: const Size(0, AppSize.minTarget),
                   selectedBackgroundColor: context.accentWash,
-                  textStyle: const TextStyle(fontSize: AppFont.action),
+                  textStyle: const TextStyle(
+                    fontFamily: AppTheme.uiFont,
+                    fontSize: AppFont.action,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 segments: [
-                  ButtonSegment(value: false, label: Text(l.favoritesTabSaved)),
-                  ButtonSegment(value: true, label: Text(l.favoritesTabSeen)),
+                  ButtonSegment(
+                    value: false,
+                    label: _segmentLabel(l.favoritesTabSaved),
+                  ),
+                  ButtonSegment(
+                    value: true,
+                    label: _segmentLabel(l.favoritesTabSeen),
+                  ),
                 ],
                 selected: {_showSeen},
                 onSelectionChanged: (s) => setState(() => _showSeen = s.first),

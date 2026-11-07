@@ -154,11 +154,10 @@ class ContentRepository implements ContentSource {
   // ---- Búsqueda ------------------------------------------------------------
 
   /// Palabras de [query] ya normalizadas (como `verses.text_norm`).
-  static List<String> queryTokens(String query) =>
-      normalizeText(query)
-          .split(RegExp(r'[^a-z0-9]+'))
-          .where((t) => t.isNotEmpty)
-          .toList();
+  static List<String> queryTokens(String query) {
+    final norm = normalizeSearchText(query);
+    return norm.isEmpty ? const [] : norm.split(' ');
+  }
 
   /// Consulta FTS5: las palabras completas y prefijo solo en la última
   /// (spec HU-06.5), ordenada por `bm25`.
