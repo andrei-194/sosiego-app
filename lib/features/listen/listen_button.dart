@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/widgets/labeled_action.dart';
 import '../../core/widgets/tokens.dart';
 import '../../data/content/content_repository.dart';
 import '../../data/services/tts_service.dart';
@@ -20,10 +21,17 @@ class ListenButton extends ConsumerStatefulWidget {
     super.key,
     required this.verse,
     this.extraBlocks = const [],
+    this.rowWith,
   });
 
   final Verse verse;
   final List<String> extraBlocks;
+
+  /// Variante de fila de acciones: en lugar del botón ancho, Escuchar (y
+  /// Pausar y Detener al sonar) se dibujan como [LabeledAction] —icono con el
+  /// texto debajo, 56 dp de alto— y comparten la fila con estas acciones, todas
+  /// del mismo ancho. El comportamiento es el mismo (HU-08).
+  final List<Widget>? rowWith;
 
   @override
   ConsumerState<ListenButton> createState() => _ListenButtonState();
@@ -84,6 +92,84 @@ class _ListenButtonState extends ConsumerState<ListenButton> {
     final problem = state.problemKey == _key ? state.problem : TtsProblem.none;
     final scheme = Theme.of(context).colorScheme;
 
+    final problemNote = problem == TtsProblem.none
+        ? null
+        : Padding(
+            padding: const EdgeInsets.only(top: Gap.s8),
+            child: Semantics(
+              liveRegion: true,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline_rounded, color: scheme.primary),
+                  const SizedBox(width: Gap.s8),
+                  Expanded(
+                    child: Text(
+                      problem == TtsProblem.noSpanishVoice
+                          ? l.listenNoVoice
+                          : l.listenFailed,
+                      key: const Key('listen-problem'),
+                      style: widget.rowWith == null
+                          ? AppText.body(context)
+                          : AppText.body(context)
+                                .copyWith(color: scheme.primary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+    final rowWith = widget.rowWith;
+    if (rowWith != null) {
+      final fg = scheme.primary;
+      final slots = active
+          ? [
+              LabeledAction(
+                key: const Key('listen-toggle'),
+                label: playing ? l.listenPause : l.listenResume,
+                color: fg,
+                selected: playing,
+                balanceLabel: true,
+                onTap: playing ? _tts.pause : _tts.resume,
+                icon: Icon(
+                  playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                ),
+              ),
+              LabeledAction(
+                key: const Key('listen-stop'),
+                label: l.listenStop,
+                color: fg,
+                balanceLabel: true,
+                onTap: _tts.stop,
+                icon: const Icon(Icons.stop_rounded),
+              ),
+            ]
+          : [
+              LabeledAction(
+                key: const Key('listen-start'),
+                label: l.listenAction,
+                color: fg,
+                balanceLabel: true,
+                onTap: _play,
+                icon: const Icon(Icons.volume_up_rounded),
+              ),
+            ];
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final w in [...slots, ...rowWith]) Expanded(child: w),
+            ],
+          ),
+          ?problemNote,
+        ],
+      );
+    }
+
     final buttons = active
         ? [
             _ListenAction(
@@ -114,29 +200,7 @@ class _ListenButtonState extends ConsumerState<ListenButton> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Wrap(spacing: Gap.s8, runSpacing: Gap.s8, children: buttons),
-        if (problem != TtsProblem.none)
-          Padding(
-            padding: const EdgeInsets.only(top: Gap.s8),
-            child: Semantics(
-              liveRegion: true,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.info_outline_rounded, color: scheme.primary),
-                  const SizedBox(width: Gap.s8),
-                  Expanded(
-                    child: Text(
-                      problem == TtsProblem.noSpanishVoice
-                          ? l.listenNoVoice
-                          : l.listenFailed,
-                      key: const Key('listen-problem'),
-                      style: AppText.body(context),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        ?problemNote,
       ],
     );
   }

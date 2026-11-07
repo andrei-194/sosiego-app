@@ -43,109 +43,160 @@ class VerseCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(gradient: palette.gradient),
       child: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                Gap.s16,
-                Gap.s8,
-                Gap.s8,
-                Gap.s4,
-              ),
-              child: topBar,
-            ),
-            Expanded(
-              child: _VerseBody(verse: verse, palette: palette),
-            ),
-            _BottomPanel(
-              verse: verse,
-              palette: palette,
-              showHint: showHint,
-              onPrevious: onPrevious,
-              onNext: onNext,
-            ),
-          ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Pantalla baja (unos 720 dp de alto) o letra muy grande: el panel
+            // inferior se aprieta y el versículo conserva todo el espacio. El
+            // tamaño de la letra del versículo nunca se reduce.
+            final compact =
+                constraints.maxHeight < compactMaxHeight ||
+                MediaQuery.textScalerOf(context).scale(10) >= 15;
+            return Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    Gap.s16,
+                    compact ? Gap.s4 : Gap.s8,
+                    Gap.s8,
+                    Gap.s4,
+                  ),
+                  child: topBar,
+                ),
+                Expanded(
+                  child: _VerseBody(
+                    verse: verse,
+                    palette: palette,
+                    compact: compact,
+                  ),
+                ),
+                _BottomPanel(
+                  verse: verse,
+                  palette: palette,
+                  showHint: showHint,
+                  compact: compact,
+                  onPrevious: onPrevious,
+                  onNext: onNext,
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
+
+  /// Por debajo de este alto útil (dp) se usa la variante compacta.
+  static const double compactMaxHeight = 700;
 }
 
-class _VerseBody extends StatelessWidget {
-  const _VerseBody({required this.verse, required this.palette});
+class _VerseBody extends StatefulWidget {
+  const _VerseBody({
+    required this.verse,
+    required this.palette,
+    required this.compact,
+  });
 
   final Verse verse;
   final CardPalette palette;
+  final bool compact;
+
+  @override
+  State<_VerseBody> createState() => _VerseBodyState();
+}
+
+class _VerseBodyState extends State<_VerseBody> {
+  final ScrollController _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final verse = widget.verse;
+    final palette = widget.palette;
+    final compact = widget.compact;
+    // Si el texto no cabe, se desplaza (nunca se recorta ni se encoge) y una
+    // barra siempre visible avisa de que hay más.
     return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: Gap.s32),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: AppSize.readingWidth),
-              child: Semantics(
-                container: true,
-                label: context.l10n.verseSemantics(verse.text, verse.reference),
-                child: ExcludeSemantics(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Comilla de apertura decorativa, muy sutil.
-                      Text(
-                        '“',
-                        style: TextStyle(
-                          fontFamily: AppTheme.verseFont,
-                          fontSize: 72,
-                          height: 0.75,
-                          color: palette.accent.withValues(alpha: 0.4),
-                        ),
-                      ),
-                      const SizedBox(height: Gap.s4),
-                      Text(
-                        verse.text,
-                        key: const Key('verse-text'),
-                        style: TextStyle(
-                          fontFamily: AppTheme.verseFont,
-                          fontSize: AppFont.verse,
-                          height: 1.6,
-                          letterSpacing: 0.1,
-                          color: palette.text,
-                        ),
-                      ),
-                      const SizedBox(height: Gap.s24),
-                      Row(
-                        children: [
-                          Container(
-                            width: 28,
-                            height: 2,
-                            decoration: BoxDecoration(
-                              color: palette.accent,
-                              borderRadius: BorderRadius.circular(1),
-                            ),
+      builder: (context, constraints) => Scrollbar(
+        controller: _scroll,
+        thumbVisibility: true,
+        child: SingleChildScrollView(
+          controller: _scroll,
+          padding: const EdgeInsets.symmetric(horizontal: Gap.s32),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppSize.readingWidth,
+                ),
+                child: Semantics(
+                  container: true,
+                  label: context.l10n.verseSemantics(
+                    verse.text,
+                    verse.reference,
+                  ),
+                  child: ExcludeSemantics(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Comilla de apertura decorativa, muy sutil.
+                        Text(
+                          '“',
+                          style: TextStyle(
+                            fontFamily: AppTheme.verseFont,
+                            fontSize: compact ? 48 : 72,
+                            height: 0.75,
+                            color: palette.accent.withValues(alpha: 0.4),
                           ),
-                          const SizedBox(width: Gap.s12),
-                          Flexible(
-                            child: Text(
-                              verse.reference,
-                              key: const Key('verse-reference'),
-                              style: TextStyle(
-                                fontFamily: AppTheme.verseFont,
-                                fontStyle: FontStyle.italic,
-                                fontWeight: FontWeight.w700,
-                                fontSize: AppFont.reference + 3,
-                                letterSpacing: 0.3,
+                        ),
+                        const SizedBox(height: Gap.s4),
+                        Text(
+                          verse.text,
+                          key: const Key('verse-text'),
+                          style: TextStyle(
+                            fontFamily: AppTheme.verseFont,
+                            fontSize: AppFont.verse,
+                            height: 1.6,
+                            letterSpacing: 0.1,
+                            color: palette.text,
+                          ),
+                        ),
+                        SizedBox(height: compact ? Gap.s16 : Gap.s24),
+                        Row(
+                          children: [
+                            Container(
+                              width: 28,
+                              height: 2,
+                              decoration: BoxDecoration(
                                 color: palette.accent,
+                                borderRadius: BorderRadius.circular(1),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(width: Gap.s12),
+                            Flexible(
+                              child: Text(
+                                verse.reference,
+                                key: const Key('verse-reference'),
+                                style: TextStyle(
+                                  fontFamily: AppTheme.verseFont,
+                                  fontStyle: FontStyle.italic,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: AppFont.reference + 3,
+                                  letterSpacing: 0.3,
+                                  color: palette.accent,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -157,11 +208,15 @@ class _VerseBody extends StatelessWidget {
   }
 }
 
+/// Panel inferior en tres niveles: ayuda (si hay), bandeja de acciones
+/// (Escuchar, Guardar, Compartir y Más como este, en una fila) y, debajo y más
+/// grandes, Anterior y Siguiente, que son lo que más se toca.
 class _BottomPanel extends StatelessWidget {
   const _BottomPanel({
     required this.verse,
     required this.palette,
     required this.showHint,
+    required this.compact,
     required this.onPrevious,
     required this.onNext,
   });
@@ -169,6 +224,7 @@ class _BottomPanel extends StatelessWidget {
   final Verse verse;
   final CardPalette palette;
   final bool showHint;
+  final bool compact;
   final VoidCallback? onPrevious;
   final VoidCallback onNext;
 
@@ -176,13 +232,18 @@ class _BottomPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Gap.s16, Gap.s4, Gap.s16, Gap.s12),
+      padding: EdgeInsets.fromLTRB(
+        Gap.s20,
+        compact ? Gap.s4 : Gap.s8,
+        Gap.s20,
+        compact ? Gap.s12 : Gap.s20,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (showHint)
             Padding(
-              padding: const EdgeInsets.only(bottom: Gap.s8),
+              padding: EdgeInsets.only(bottom: compact ? Gap.s8 : Gap.s12),
               child: Semantics(
                 label: l.feedSwipeHintSemantics,
                 child: ExcludeSemantics(
@@ -216,11 +277,30 @@ class _BottomPanel extends StatelessWidget {
                 ),
               ),
             ),
-          VerseActions(verse: verse, color: palette.text),
-          const SizedBox(height: Gap.s8),
+          DecoratedBox(
+            key: const Key('feed-actions'),
+            decoration: BoxDecoration(
+              color: palette.text.withValues(alpha: 0.07),
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              border: Border.all(color: palette.text.withValues(alpha: 0.14)),
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: Gap.s4,
+                vertical: compact ? 0 : Gap.s4,
+              ),
+              child: VerseActions(
+                verse: verse,
+                color: palette.text,
+                inline: true,
+              ),
+            ),
+          ),
+          SizedBox(height: compact ? Gap.s12 : Gap.s20),
           Row(
             children: [
               Expanded(
+                flex: 2,
                 child: FeedNavButton(
                   key: const Key('feed-previous'),
                   label: l.actionPrevious,
@@ -231,6 +311,7 @@ class _BottomPanel extends StatelessWidget {
               ),
               const SizedBox(width: Gap.s12),
               Expanded(
+                flex: 3,
                 child: FeedNavButton(
                   key: const Key('feed-next'),
                   label: l.actionNext,

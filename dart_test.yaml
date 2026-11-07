@@ -1,0 +1,3 @@
+tags:
+  golden:
+    description: Pruebas golden (se generan en Linux en CI; ver docs/pruebas-calidad.md).

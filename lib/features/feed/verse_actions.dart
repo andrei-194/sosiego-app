@@ -32,10 +32,18 @@ void showToast(
 /// El botón Escuchar sobre un fondo de estilo (feed, versículo de hoy): tiñe
 /// sus colores con el del texto del estilo para mantener el contraste.
 class ListenOnStyle extends StatelessWidget {
-  const ListenOnStyle({super.key, required this.verse, required this.color});
+  const ListenOnStyle({
+    super.key,
+    required this.verse,
+    required this.color,
+    this.rowWith,
+  });
 
   final Verse verse;
   final Color color;
+
+  /// Ver [ListenButton.rowWith].
+  final List<Widget>? rowWith;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +57,7 @@ class ListenOnStyle extends StatelessWidget {
           ),
         ),
       ),
-      child: ListenButton(verse: verse),
+      child: ListenButton(verse: verse, rowWith: rowWith),
     );
   }
 }
@@ -80,6 +88,7 @@ class VerseActions extends ConsumerWidget {
     required this.verse,
     this.color,
     this.showMore = true,
+    this.inline = false,
   });
 
   final Verse verse;
@@ -88,6 +97,10 @@ class VerseActions extends ConsumerWidget {
   final Color? color;
   final bool showMore;
 
+  /// Una sola fila: Escuchar entra como una acción más (icono con texto
+  /// debajo) en vez de ir en fila propia con su botón ancho. La usa el feed.
+  final bool inline;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
@@ -95,6 +108,44 @@ class VerseActions extends ConsumerWidget {
     final fg = color ?? scheme.onSurface;
     final isFavorite = ref.watch(favoritesProvider).contains(verse.id);
     final reduce = MediaQuery.disableAnimationsOf(context);
+    if (inline) {
+      final others = <Widget>[
+        LabeledAction(
+          label: isFavorite ? l.actionSaved : l.actionSave,
+          color: fg,
+          selected: isFavorite,
+          balanceLabel: true,
+          onTap: () => toggleFavorite(context, ref, verse),
+          icon: AnimatedSwitcher(
+            duration: reduce ? Duration.zero : AppDuration.quick,
+            transitionBuilder: (child, anim) =>
+                ScaleTransition(scale: anim, child: child),
+            child: Icon(
+              isFavorite ? Icons.favorite : Icons.favorite_border,
+              key: ValueKey(isFavorite),
+            ),
+          ),
+        ),
+        LabeledAction(
+          label: l.actionShare,
+          color: fg,
+          balanceLabel: true,
+          icon: const Icon(Icons.ios_share_rounded),
+          onTap: () => showShareSheet(context, verse: verse),
+        ),
+        if (showMore)
+          LabeledAction(
+            label: l.moreLikeThis,
+            color: fg,
+            balanceLabel: true,
+            icon: const Icon(Icons.auto_stories_outlined),
+            onTap: () => openSimilar(context, verse.id),
+          ),
+      ];
+      return color == null
+          ? ListenButton(verse: verse, rowWith: others)
+          : ListenOnStyle(verse: verse, color: fg, rowWith: others);
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,

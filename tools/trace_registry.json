@@ -1,0 +1,25 @@
+{
+  "_comentario": "Criterios del spec sin prueba automatica con nombre HU-NN.M. tipo: medicion | manual. resultado: ok | pendiente (pendiente solo avisa; con --strict falla). Cuando exista una prueba con el ID, borrar la entrada (el script lo recuerda).",
+  "criterios": {
+    "HU-02.4": {
+      "tipo": "medicion",
+      "resultado": "pendiente",
+      "detalle": "Toque de chip < 300 ms. Emulador en DEBUG (06-nov-2026): 409 ms, no representativo. Falta medir en profile en dispositivo fisico (docs/pruebas-calidad.md)."
+    },
+    "HU-04.6": {
+      "tipo": "medicion",
+      "resultado": "pendiente",
+      "detalle": "< 5 % de cuadros > 16 ms. Emulador en DEBUG: 32 de 118 cuadros superan el presupuesto, no representativo (JIT). Falta medir en profile en dispositivo fisico."
+    },
+    "HU-06.9": {
+      "tipo": "manual",
+      "resultado": "ok",
+      "detalle": "La busqueda por voz queda fuera del MVP: no hay nada que probar. Revision 2026-11-06: no existe boton de microfono ni permiso RECORD_AUDIO en el manifiesto."
+    },
+    "HU-07.7": {
+      "tipo": "manual",
+      "resultado": "pendiente",
+      "detalle": "Tocar la notificacion abre el versiculo del dia, con la app abierta o cerrada. Requiere dispositivo real o emulador con notificaciones; verificar a mano y registrar aqui."
+    }
+  }
+}
